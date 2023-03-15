@@ -7,5 +7,5 @@ type NotificationService interface {
 	BaseService
 
 	// ProcessNotification приоритезация, лимитер уведомлений
-	ProcessNotification(notification entity.Notification) error
+	ProcessNotification(notification []entity.Notification) error
 }

@@ -4,6 +4,7 @@ import "github.com/google/uuid"
 
 // Notification структура уведомления
 type Notification struct {
+	Index         int            // index индекс уведомления в очереди
 	EventUUID     uuid.UUID      `json:"event_uuid"`               // EventUUID связь с UUID бизнес события
 	PersonUUIDs   []uuid.UUID    `json:"person_uuids"`             // PersonUUIDs связь с пользователями - получателями уведомления
 	MessageParams []MessageParam `json:"message_params,omitempty"` // MessageParams key-value подстановки в шаблон уведомления

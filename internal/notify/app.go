@@ -34,9 +34,11 @@ func New() App {
 	return App{
 		config: appConf,
 		services: services{
-			notificationService: nil,
-			eventService:        nil,
-			templateService:     nil,
+			notificationService:    nil,
+			notificationDispatcher: nil,
+			eventService:           nil,
+			templateService:        nil,
+			statisticService:       nil,
 		},
 		logger: appLogger,
 	}
