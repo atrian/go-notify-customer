@@ -9,11 +9,12 @@ import (
 )
 
 type Service struct {
+	storage Storager
 }
 
 func (e Service) Start() {
-	//TODO implement me
-	panic("implement me")
+	// подключаем in memory хранилище
+	e.storage = NewMemoryStorage()
 }
 
 func (e Service) Stop() {
@@ -22,31 +23,52 @@ func (e Service) Stop() {
 }
 
 func (e Service) All(ctx context.Context) []entity.Event {
-	//TODO implement me
-	panic("implement me")
+	events, err := e.storage.All(ctx)
+
+	if err != nil {
+		// TODO log err
+	}
+
+	return events
 }
 
 func (e Service) Store(ctx context.Context, event entity.Event) (entity.Event, error) {
-	//TODO implement me
-	panic("implement me")
+	event.EventUUID = uuid.New()
+
+	err := e.storage.Store(ctx, event)
+	if err != nil {
+		return entity.Event{}, err
+	}
+
+	return event, nil
 }
 
 func (e Service) StoreBatch(ctx context.Context, events []entity.Event) ([]entity.Event, error) {
-	//TODO implement me
-	panic("implement me")
+	for i := 0; i < len(events); i++ {
+		events[i].EventUUID = uuid.New()
+		err := e.storage.Store(ctx, events[i])
+		if err != nil {
+			// TODO err handling
+			// Удалить все добавленные и вернуть ошибку?
+		}
+	}
+
+	return events, nil
 }
 
 func (e Service) Update(ctx context.Context, event entity.Event) (entity.Event, error) {
-	//TODO implement me
-	panic("implement me")
+	err := e.storage.Store(ctx, event)
+	if err != nil {
+		return entity.Event{}, err
+	}
+
+	return event, nil
 }
 
 func (e Service) FindById(ctx context.Context, eventUUID uuid.UUID) (entity.Event, error) {
-	//TODO implement me
-	panic("implement me")
+	return e.storage.GetById(ctx, eventUUID)
 }
 
 func (e Service) DeleteById(ctx context.Context, eventUUID uuid.UUID) error {
-	//TODO implement me
-	panic("implement me")
+	return e.storage.DeleteById(ctx, eventUUID)
 }
