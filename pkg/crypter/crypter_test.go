@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/atrian/devmetrics/internal/crypter"
+	"github.com/atrian/go-notify-customer/pkg/crypter"
 )
 
 func ExampleKeyManager_Encrypt() {
