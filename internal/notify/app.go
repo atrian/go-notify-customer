@@ -1,6 +1,7 @@
 package notify
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -9,7 +10,10 @@ import (
 	"github.com/atrian/go-notify-customer/internal/interfaces"
 	"github.com/atrian/go-notify-customer/internal/services/event"
 	"github.com/atrian/go-notify-customer/internal/services/notify"
-	"github.com/atrian/go-notify-customer/internal/services/notify/entity"
+	notifyEntity "github.com/atrian/go-notify-customer/internal/services/notify/entity"
+	"github.com/atrian/go-notify-customer/internal/services/stat"
+	statEntity "github.com/atrian/go-notify-customer/internal/services/stat/entity"
+	"github.com/atrian/go-notify-customer/internal/services/template"
 	"github.com/atrian/go-notify-customer/pkg/logger"
 )
 
@@ -28,13 +32,17 @@ type services struct {
 	statisticService       interfaces.StatService                 // statisticService сервис статистики отправки
 }
 
-func New() App {
+func New(ctx context.Context) App {
 	// общий конфиг приложения
 	appConf := config.NewConfig()
 	// логгер приложения
 	appLogger := logger.NewZapLogger()
 
-	notificationChan := make(chan entity.Notification)
+	// канал для передачи уведомлений
+	notificationChan := make(chan notifyEntity.Notification)
+
+	// канал для передачи статистики отправки
+	statChan := make(chan statEntity.Stat)
 
 	return App{
 		config: appConf,
@@ -42,8 +50,8 @@ func New() App {
 			notificationService:    notify.New(notificationChan),
 			notificationDispatcher: nil,
 			eventService:           event.New(),
-			templateService:        nil,
-			statisticService:       nil,
+			templateService:        template.New(),
+			statisticService:       stat.New(ctx, statChan),
 		},
 		logger: appLogger,
 	}
@@ -56,6 +64,9 @@ func (a App) Run() {
 
 	// Предварительная готовность сервисов
 	a.services.notificationService.Start()
+	a.services.eventService.Start()
+	a.services.templateService.Start()
+	a.services.statisticService.Start()
 
 	// запуск фоновых воркеров
 	a.StartWorkers()

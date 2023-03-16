@@ -1,8 +1,14 @@
-package notify
+package main
 
-import "github.com/atrian/go-notify-customer/internal/notify"
+import (
+	"context"
+
+	"github.com/atrian/go-notify-customer/internal/notify"
+)
 
 func main() {
-	application := notify.New()
+	ctx := context.Background()
+
+	application := notify.New(ctx)
 	application.Run()
 }
