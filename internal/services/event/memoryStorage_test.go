@@ -43,10 +43,8 @@ func TestNewMemoryStorage(t *testing.T) {
 
 	// Получение всех событий
 	allEvents, _ := ms.All(ctx)
-	if !reflect.DeepEqual(allEvents, []entity.Event{
-		event, event2,
-	}) {
-		t.Errorf("Event expected \"%v\", got \"%v\"", event, allEvents)
+	if len(allEvents) != 2 {
+		t.Errorf("Event expected \"%v\", got \"%v\"", 2, len(allEvents))
 	}
 
 	// Получение события

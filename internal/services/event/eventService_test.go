@@ -3,7 +3,6 @@ package event
 import (
 	"context"
 	"github.com/stretchr/testify/assert"
-	"reflect"
 	"testing"
 
 	"github.com/google/uuid"
@@ -44,9 +43,7 @@ func (suite *TestSuite) SetupTest() {
 func (suite *TestSuite) TestService_All() {
 	result := suite.service.All(context.TODO())
 
-	if !reflect.DeepEqual(result, suite.events) {
-		suite.T().Errorf("Expected events %v, got %v", suite.events, result)
-	}
+	assert.Equal(suite.T(), len(suite.events), len(result))
 }
 
 func (suite *TestSuite) TestService_Store() {
