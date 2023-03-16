@@ -12,9 +12,15 @@ type Service struct {
 	storage Storager
 }
 
+func New() *Service {
+	s := Service{
+		storage: NewMemoryStorage(),
+	}
+	return &s
+}
+
 func (e Service) Start() {
-	// подключаем in memory хранилище
-	e.storage = NewMemoryStorage()
+	// log?
 }
 
 func (e Service) Stop() {

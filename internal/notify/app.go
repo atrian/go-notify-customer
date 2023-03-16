@@ -7,6 +7,9 @@ import (
 
 	"github.com/atrian/go-notify-customer/config"
 	"github.com/atrian/go-notify-customer/internal/interfaces"
+	"github.com/atrian/go-notify-customer/internal/services/event"
+	"github.com/atrian/go-notify-customer/internal/services/notify"
+	"github.com/atrian/go-notify-customer/internal/services/notify/entity"
 	"github.com/atrian/go-notify-customer/pkg/logger"
 )
 
@@ -31,12 +34,14 @@ func New() App {
 	// логгер приложения
 	appLogger := logger.NewZapLogger()
 
+	notificationChan := make(chan entity.Notification)
+
 	return App{
 		config: appConf,
 		services: services{
-			notificationService:    nil,
+			notificationService:    notify.New(notificationChan),
 			notificationDispatcher: nil,
-			eventService:           nil,
+			eventService:           event.New(),
 			templateService:        nil,
 			statisticService:       nil,
 		},
@@ -49,8 +54,8 @@ func (a App) Run() {
 	// операции корректного завершения работы
 	defer a.Stop()
 
-	// стартовые операции сервисов
-	// a.services.[nService].Start()
+	// Предварительная готовность сервисов
+	a.services.notificationService.Start()
 
 	// запуск фоновых воркеров
 	a.StartWorkers()
