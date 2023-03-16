@@ -2,6 +2,7 @@ package template
 
 import (
 	"context"
+
 	"github.com/atrian/go-notify-customer/internal/services/template/entity"
 
 	"github.com/google/uuid"

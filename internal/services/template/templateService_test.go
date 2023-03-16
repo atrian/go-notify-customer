@@ -2,11 +2,13 @@ package template
 
 import (
 	"context"
-	"github.com/atrian/go-notify-customer/internal/services/template/entity"
+	"testing"
+
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	"testing"
+
+	"github.com/atrian/go-notify-customer/internal/services/template/entity"
 )
 
 type TemplateTestSuite struct {

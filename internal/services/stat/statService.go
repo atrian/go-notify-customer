@@ -38,4 +38,3 @@ func (s Service) FindByEventUUID(ctx context.Context, orderId string) ([]entity.
 	//TODO implement me
 	panic("implement me")
 }
-
