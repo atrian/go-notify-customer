@@ -3,15 +3,43 @@ package stat
 import (
 	"context"
 
+	"github.com/google/uuid"
+
 	"github.com/atrian/go-notify-customer/internal/services/stat/entity"
 )
 
 type Service struct {
+	statChan chan entity.Stat
+	ctx      context.Context
+	storage  Storager
+}
+
+func New(ctx context.Context, statChan chan entity.Stat) *Service {
+	s := Service{
+		statChan: statChan,
+		storage:  NewMemoryStorage(),
+		ctx:      ctx,
+	}
+
+	return &s
 }
 
 func (s Service) Start() {
-	//TODO implement me
-	panic("implement me")
+	go func(ctx context.Context, statChan chan entity.Stat) {
+		for {
+			select {
+			case stat := <-statChan:
+				_ = s.Store(stat)
+
+			case <-ctx.Done():
+				// TODO shutdown
+				return
+
+			default:
+				// do nothing
+			}
+		}
+	}(s.ctx, s.statChan)
 }
 
 func (s Service) Stop() {
@@ -20,21 +48,22 @@ func (s Service) Stop() {
 }
 
 func (s Service) All(ctx context.Context) []entity.Stat {
-	//TODO implement me
-	panic("implement me")
+	res, err := s.storage.All(ctx)
+	if err != nil {
+		// TODO handle err
+	}
+
+	return res
 }
 
-func (s Service) Store(statChan chan entity.Stat) error {
-	//TODO implement me
-	panic("implement me")
+func (s Service) Store(stat entity.Stat) error {
+	return s.storage.Store(s.ctx, stat)
 }
 
-func (s Service) FindByPersonUUID(ctx context.Context, orderId string) ([]entity.Stat, error) {
-	//TODO implement me
-	panic("implement me")
+func (s Service) FindByPersonUUID(ctx context.Context, personUUID uuid.UUID) ([]entity.Stat, error) {
+	return s.storage.GetByPersonId(ctx, personUUID)
 }
 
-func (s Service) FindByEventUUID(ctx context.Context, orderId string) ([]entity.Stat, error) {
-	//TODO implement me
-	panic("implement me")
+func (s Service) FindByEventUUID(ctx context.Context, personUUID uuid.UUID) (entity.Stat, error) {
+	return s.storage.GetByNotificationId(ctx, personUUID)
 }
