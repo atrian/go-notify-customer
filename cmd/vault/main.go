@@ -1,3 +1,14 @@
-package vault
+package main
 
-// TODO заглушка для GRPC сервиса работы с персональными данными vault
+import (
+	"context"
+
+	"github.com/atrian/go-notify-customer/internal/vault"
+)
+
+func main() {
+	ctx := context.Background()
+
+	application := vault.New(ctx)
+	application.Run()
+}

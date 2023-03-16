@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package contacts;
+
+option go_package = "github.com/atrian/go-notify-client";
+
+message Contact {
+  string person_uuid = 1;
+  string channel = 2;
+  string destination = 3;
+}
+
+message GetContactsRequest {
+  string PersonUUID = 1;
+}
+
+message GetContactsResponse {
+  enum ResponseStatus {
+    OK = 0;
+    ERROR = 1;
+  }
+
+  ResponseStatus status = 1;
+  string error = 2;
+  repeated Contact contacts = 3;
+}
+
+service Vault {
+  rpc GetContacts(GetContactsRequest) returns (GetContactsResponse);
+}
