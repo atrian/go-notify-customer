@@ -11,13 +11,13 @@ import (
 	"github.com/atrian/go-notify-customer/internal/services/template/entity"
 )
 
-type TestSuite struct {
+type MemoryStorageTestSuite struct {
 	suite.Suite
 	storage   Storager
 	templates []entity.Template
 }
 
-func (suite *TestSuite) SetupSuite() {
+func (suite *MemoryStorageTestSuite) SetupSuite() {
 	suite.templates = []entity.Template{
 		{
 			TemplateUUID: uuid.New(),
@@ -37,14 +37,14 @@ func (suite *TestSuite) SetupSuite() {
 	}
 }
 
-func (suite *TestSuite) SetupTest() {
+func (suite *MemoryStorageTestSuite) SetupTest() {
 	suite.storage = NewMemoryStorage()
 	for i := 0; i < len(suite.templates); i++ {
 		_ = suite.storage.Store(context.TODO(), suite.templates[i])
 	}
 }
 
-func (suite *TestSuite) Test_GetById() {
+func (suite *MemoryStorageTestSuite) Test_GetById() {
 	// Запрос несуществующего объекта
 	_, err := suite.storage.GetById(context.TODO(), uuid.New())
 	assert.ErrorIs(suite.T(), err, NotFound)
@@ -55,7 +55,7 @@ func (suite *TestSuite) Test_GetById() {
 	assert.Equal(suite.T(), result, suite.templates[0])
 }
 
-func (suite *TestSuite) Test_GetByEventId() {
+func (suite *MemoryStorageTestSuite) Test_GetByEventId() {
 	// Запрос несуществующего объекта
 	_, err := suite.storage.GetByEventId(context.TODO(), uuid.New())
 	assert.ErrorIs(suite.T(), err, NotFound)
@@ -66,13 +66,13 @@ func (suite *TestSuite) Test_GetByEventId() {
 	assert.Equal(suite.T(), result, suite.templates[0])
 }
 
-func (suite *TestSuite) Test_All() {
+func (suite *MemoryStorageTestSuite) Test_All() {
 	result, err := suite.storage.All(context.TODO())
 	assert.NoError(suite.T(), err)
 	assert.Equal(suite.T(), len(result), len(suite.templates))
 }
 
-func (suite *TestSuite) Test_DeleteById() {
+func (suite *MemoryStorageTestSuite) Test_DeleteById() {
 	err := suite.storage.DeleteById(context.TODO(), suite.templates[0].TemplateUUID)
 	assert.NoError(suite.T(), err)
 
@@ -80,7 +80,7 @@ func (suite *TestSuite) Test_DeleteById() {
 	assert.ErrorIs(suite.T(), err, NotFound)
 }
 
-func (suite *TestSuite) Test_Update() {
+func (suite *MemoryStorageTestSuite) Test_Update() {
 	template := suite.templates[0]
 	template.Title = "Updated field"
 
@@ -93,6 +93,6 @@ func (suite *TestSuite) Test_Update() {
 }
 
 // Для запуска через Go test
-func TestThisSuite(t *testing.T) {
-	suite.Run(t, new(TestSuite))
+func TestMemoryStorageSuite(t *testing.T) {
+	suite.Run(t, new(MemoryStorageTestSuite))
 }
