@@ -2,11 +2,14 @@ package vault
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	pb "github.com/atrian/go-notify-customer/proto"
 	"github.com/google/uuid"
 )
+
+var BadRequest = errors.New("bad request")
 
 type ContactServer struct {
 	pb.UnimplementedVaultServer
@@ -31,11 +34,12 @@ func (s ContactServer) GetContacts(ctx context.Context, in *pb.GetContactsReques
 
 	if err != nil {
 		response.Error = fmt.Sprintf("Bad request")
-	} else {
-		response.Contacts = []*pb.Contact{
-			&phone,
-			&email,
-		}
+		return nil, BadRequest
+	}
+
+	response.Contacts = []*pb.Contact{
+		&phone,
+		&email,
 	}
 
 	return &response, nil

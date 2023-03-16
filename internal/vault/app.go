@@ -13,8 +13,9 @@ import (
 )
 
 type App struct {
-	ctx    context.Context
-	logger interfaces.Logger
+	ctx      context.Context
+	logger   interfaces.Logger
+	listener net.Listener
 }
 
 func New(ctx context.Context) *App {
@@ -29,10 +30,8 @@ func New(ctx context.Context) *App {
 }
 
 func (a *App) Run() {
-	// определяем порт для сервера
-	listen, err := net.Listen("tcp", ":3200")
-	if err != nil {
-		a.logger.Fatal("net.Listen error", err)
+	if a.listener == nil {
+		a.SetDefaultListener()
 	}
 
 	// создаём gRPC-сервер без зарегистрированной службы
@@ -44,7 +43,27 @@ func (a *App) Run() {
 	a.logger.Info("Vault gRPC server started")
 
 	// получаем запрос gRPC
-	if err := s.Serve(listen); err != nil {
+	if err := s.Serve(a.listener); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func (a *App) SetCustomListener(listener net.Listener) *App {
+	a.listener = listener
+	return a
+}
+
+func (a *App) SetDefaultListener() *App {
+	// определяем порт для сервера
+	l, err := net.Listen("tcp", ":3200")
+	if err != nil {
+		a.logger.Fatal("net.Listen error", err)
+	}
+
+	a.listener = l
+	return a
+}
+
+func (a *App) Stop() {
+	// TODO shutdown
 }
