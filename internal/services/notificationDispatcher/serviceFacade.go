@@ -57,6 +57,7 @@ func (f *ServiceFacade) getEvent(ctx context.Context, eventUuid uuid.UUID) (dto.
 	return f.event.FindById(ctx, eventUuid)
 }
 
-func (f *ServiceFacade) parseTemplate(template string, replaces map[string]string) string {
+func (f *ServiceFacade) prepareTemplate(template string, replaces []dto.MessageParam) string {
+	// TODO замена подстановок в тексте сообщения
 	return ""
 }

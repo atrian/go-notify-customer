@@ -16,7 +16,7 @@ type serviceGateway interface {
 	getContacts(ctx context.Context, personUUIDs []uuid.UUID) ([]dto.PersonContacts, error)
 	getTemplates(ctx context.Context, eventUUID uuid.UUID) ([]dto.Template, error)
 	getEvent(ctx context.Context, eventUuid uuid.UUID) (dto.Event, error)
-	parseTemplate(template string, replaces map[string]string) string
+	prepareTemplate(template string, replaces []dto.MessageParam) string
 }
 
 type dispatcherConfig interface {
@@ -114,16 +114,71 @@ func (d Dispatcher) buildMessages(notification dto.Notification) []dto.Message {
 	var messages []dto.Message
 
 	// запрос контактов
-	contacts, _ := d.services.getContacts(d.ctx, notification.PersonUUIDs)
-	// запрос бизнес события
-	event, _ := d.services.getEvent(d.ctx, notification.EventUUID)
-	// запрос шаблона для события
-	templates, _ := d.services.getTemplates(d.ctx, notification.EventUUID)
+	contacts, err := d.services.getContacts(d.ctx, notification.PersonUUIDs)
+	if err != nil {
+		// TODO err handle
+	}
 
-	_, _, _ = contacts, event, templates
-	// сформировать сообщение
-	// добавить его в слайс
-	// вернуть слайс
+	// запрос бизнес события
+	event, err := d.services.getEvent(d.ctx, notification.EventUUID)
+	if err != nil {
+		// TODO err handle
+	}
+
+	// запрос шаблона для события
+	templates, err := d.services.getTemplates(d.ctx, notification.EventUUID)
+	if err != nil {
+		// TODO err handle
+	}
+
+	// Формируем доступные шаблоны - делаем подстановки параметров в текст
+	// структура preparedTemplates [тип_канала]текст_с_подстановками
+	preparedTemplates := make(map[string]string, len(templates))
+
+	for _, template := range templates {
+		preparedTemplates[template.ChannelType] = d.services.prepareTemplate(template.Body, notification.MessageParams)
+	}
+
+	// для каждого канала в котором должно быть уведомление
+	for _, notificationChannel := range event.NotificationChannels {
+
+		// проверяем что есть шаблон
+		template, exist := preparedTemplates[notificationChannel]
+		if !exist {
+			d.logger.Info(fmt.Sprintf("Template does not exist for channel: %v, event: %v", notificationChannel, event.EventUUID))
+			// если шаблона нет слать нечего, пропускаем канал
+			continue
+		}
+
+		// Для каждого пользователя берем нужный контакт
+		for _, contact := range contacts {
+			// выбор контакта для канала
+			relatedContact, cErr := contactLocator(notificationChannel, contact)
+			if cErr != nil {
+				// TODO не нашли контакт человека для этого канала, пишем лог
+				continue
+			}
+
+			// и добавляем сообщение в слайс на отправку
+			messages = append(messages, dto.Message{
+				PersonUUID:         uuid.UUID{},
+				Text:               template,
+				Channel:            notificationChannel,
+				DestinationAddress: relatedContact.Destination,
+			})
+		}
+	}
 
 	return messages
+}
+
+// contactLocator Выбирает адрес назначения (телефон, емейл, и пр) для определенного канала
+func contactLocator(notificationChannel string, contacts dto.PersonContacts) (dto.Contact, error) {
+	for _, contact := range contacts.Contacts {
+		if notificationChannel == contact.Channel {
+			return contact, nil
+		}
+	}
+
+	return dto.Contact{}, fmt.Errorf("NotFound")
 }
