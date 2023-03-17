@@ -5,9 +5,9 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/atrian/go-notify-customer/internal/dto"
-
 	"github.com/google/uuid"
+
+	"github.com/atrian/go-notify-customer/internal/dto"
 )
 
 var NotFound = errors.New("not found")
@@ -55,27 +55,26 @@ func (m *MemoryStorage) GetById(ctx context.Context, templateUUID uuid.UUID) (dt
 	return template.(dto.Template), nil
 }
 
-func (m *MemoryStorage) GetByEventId(ctx context.Context, eventUUID uuid.UUID) (dto.Template, error) {
+func (m *MemoryStorage) GetByEventId(ctx context.Context, eventUUID uuid.UUID) ([]dto.Template, error) {
 	var (
-		template dto.Template
-		exist    bool
+		templates []dto.Template
+		exist     bool
 	)
 
 	m.data.Range(func(key, value interface{}) bool {
 		candidate := value.(dto.Template)
 		if candidate.EventUUID == eventUUID {
-			template = candidate
+			templates = append(templates, candidate)
 			exist = true
-			return false
 		}
 		return true
 	})
 
 	if !exist {
-		return dto.Template{}, NotFound
+		return nil, NotFound
 	}
 
-	return template, nil
+	return templates, nil
 }
 
 func (m *MemoryStorage) DeleteById(ctx context.Context, templateUUID uuid.UUID) error {

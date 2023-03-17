@@ -4,11 +4,11 @@ import (
 	"context"
 	"testing"
 
-	"github.com/atrian/go-notify-customer/internal/dto"
-
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/atrian/go-notify-customer/internal/dto"
 )
 
 type TemplateTestSuite struct {
@@ -128,7 +128,7 @@ func (suite *TemplateTestSuite) TestService_FindByEventID() {
 
 	result, err := suite.service.FindByEventId(context.TODO(), eventUUID)
 	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), result, suite.templates[0])
+	assert.Equal(suite.T(), []dto.Template{suite.templates[0]}, result)
 
 	// Поиск несуществующего события
 	_, err = suite.service.FindByEventId(context.TODO(), uuid.New())

@@ -3,9 +3,9 @@ package template
 import (
 	"context"
 
-	"github.com/atrian/go-notify-customer/internal/dto"
-
 	"github.com/google/uuid"
+
+	"github.com/atrian/go-notify-customer/internal/dto"
 )
 
 type Service struct {
@@ -75,7 +75,7 @@ func (s Service) FindById(ctx context.Context, templateUUID uuid.UUID) (dto.Temp
 	return s.storage.GetById(ctx, templateUUID)
 }
 
-func (s Service) FindByEventId(ctx context.Context, eventUUID uuid.UUID) (dto.Template, error) {
+func (s Service) FindByEventId(ctx context.Context, eventUUID uuid.UUID) ([]dto.Template, error) {
 	return s.storage.GetByEventId(ctx, eventUUID)
 }
 

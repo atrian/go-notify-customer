@@ -4,12 +4,11 @@ import (
 	"context"
 	"testing"
 
-	"github.com/atrian/go-notify-customer/internal/dto"
-
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/google/uuid"
+	"github.com/atrian/go-notify-customer/internal/dto"
 )
 
 type MemoryStorageTestSuite struct {
@@ -19,8 +18,24 @@ type MemoryStorageTestSuite struct {
 }
 
 func (suite *MemoryStorageTestSuite) SetupSuite() {
+	persistentEventUUID := uuid.New()
+
 	suite.templates = []dto.Template{
 		{
+			TemplateUUID: uuid.New(),
+			EventUUID:    persistentEventUUID,
+			Title:        "Test 3",
+			Description:  "Description 1",
+			Body:         "Body [param] 1",
+			ChannelType:  "sms",
+		}, {
+			TemplateUUID: uuid.New(),
+			EventUUID:    persistentEventUUID,
+			Title:        "Test 4",
+			Description:  "Description 1",
+			Body:         "Body [param] 1",
+			ChannelType:  "sms",
+		}, {
 			TemplateUUID: uuid.New(),
 			EventUUID:    uuid.New(),
 			Title:        "Test 1",
@@ -64,7 +79,9 @@ func (suite *MemoryStorageTestSuite) Test_GetByEventId() {
 	// Запрос существующего объекта
 	result, err := suite.storage.GetByEventId(context.TODO(), suite.templates[0].EventUUID)
 	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), result, suite.templates[0])
+	assert.Equal(suite.T(), 2, len(result)) // По условию теста 2 результата с нужным EventUUID
+	assert.Equal(suite.T(), suite.templates[0].EventUUID, result[0].EventUUID)
+	assert.Equal(suite.T(), suite.templates[0].EventUUID, result[1].EventUUID)
 }
 
 func (suite *MemoryStorageTestSuite) Test_All() {
