@@ -20,6 +20,6 @@ type TemplateService interface {
 	StoreBatch(ctx context.Context, templates []dto.Template) ([]dto.Template, error)
 	Update(ctx context.Context, template dto.Template) (dto.Template, error)
 	FindById(ctx context.Context, templateUUID uuid.UUID) (dto.Template, error)
-	FindByEventId(ctx context.Context, eventUUID uuid.UUID) (dto.Template, error)
+	FindByEventId(ctx context.Context, eventUUID uuid.UUID) ([]dto.Template, error)
 	DeleteById(ctx context.Context, templateUUID uuid.UUID) error
 }
