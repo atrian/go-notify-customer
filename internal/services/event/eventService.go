@@ -3,9 +3,9 @@ package event
 import (
 	"context"
 
-	"github.com/atrian/go-notify-customer/internal/dto"
-
 	"github.com/google/uuid"
+
+	"github.com/atrian/go-notify-customer/internal/dto"
 )
 
 type Service struct {

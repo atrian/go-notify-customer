@@ -6,9 +6,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/atrian/go-notify-customer/internal/dto"
-
 	"github.com/google/uuid"
+
+	"github.com/atrian/go-notify-customer/internal/dto"
 )
 
 func TestNewMemoryStorage(t *testing.T) {
