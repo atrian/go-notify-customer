@@ -3,14 +3,16 @@ package vault
 import (
 	"context"
 	"fmt"
-	pb "github.com/atrian/go-notify-customer/proto"
+	"net"
+	"testing"
+
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	"net"
-	"testing"
+
+	pb "github.com/atrian/go-notify-customer/proto"
 )
 
 type VaultTestSuite struct {

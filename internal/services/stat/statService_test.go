@@ -4,16 +4,16 @@ import (
 	"context"
 	"testing"
 
+	"github.com/atrian/go-notify-customer/internal/dto"
+
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-
-	"github.com/atrian/go-notify-customer/internal/services/stat/entity"
 )
 
 type StatTestSuite struct {
 	suite.Suite
-	stats   []entity.Stat
+	stats   []dto.Stat
 	service *Service
 	cancel  context.CancelFunc
 }
@@ -22,23 +22,23 @@ func (suite *StatTestSuite) SetupSuite() {
 	personOneUUID := uuid.New()
 	personTwoUUID := uuid.New()
 
-	suite.stats = []entity.Stat{
+	suite.stats = []dto.Stat{
 		{
 			NotificationUUID: uuid.New(),
 			PersonUUID:       personOneUUID,
-			Status:           entity.Sent,
+			Status:           dto.Sent,
 		}, {
 			NotificationUUID: uuid.New(),
 			PersonUUID:       personOneUUID,
-			Status:           entity.Failed,
+			Status:           dto.Failed,
 		}, {
 			NotificationUUID: uuid.New(),
 			PersonUUID:       personTwoUUID,
-			Status:           entity.Sent,
+			Status:           dto.Sent,
 		}, {
 			NotificationUUID: uuid.New(),
 			PersonUUID:       personTwoUUID,
-			Status:           entity.Sent,
+			Status:           dto.Sent,
 		},
 	}
 }
@@ -46,7 +46,7 @@ func (suite *StatTestSuite) SetupSuite() {
 func (suite *StatTestSuite) SetupTest() {
 	ctx, cancel := context.WithCancel(context.TODO())
 	suite.cancel = cancel
-	statChan := make(chan entity.Stat)
+	statChan := make(chan dto.Stat)
 
 	suite.service = New(ctx, statChan)
 
@@ -64,10 +64,10 @@ func (suite *StatTestSuite) Test_All() {
 }
 
 func (suite *StatTestSuite) Test_Store() {
-	newStat := entity.Stat{
+	newStat := dto.Stat{
 		PersonUUID:       uuid.New(),
 		NotificationUUID: uuid.New(),
-		Status:           entity.Sent,
+		Status:           dto.Sent,
 	}
 
 	err := suite.service.Store(newStat)

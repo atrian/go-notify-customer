@@ -4,21 +4,21 @@ import (
 	"context"
 	"testing"
 
+	"github.com/atrian/go-notify-customer/internal/dto"
+
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-
-	"github.com/atrian/go-notify-customer/internal/services/template/entity"
 )
 
 type TemplateTestSuite struct {
 	suite.Suite
 	service   Service
-	templates []entity.Template
+	templates []dto.Template
 }
 
 func (suite *TemplateTestSuite) SetupSuite() {
-	suite.templates = []entity.Template{
+	suite.templates = []dto.Template{
 		{
 			TemplateUUID: uuid.New(),
 			EventUUID:    uuid.New(),
@@ -49,7 +49,7 @@ func (suite *TemplateTestSuite) TestService_All() {
 }
 
 func (suite *TemplateTestSuite) TestService_Store() {
-	newEvent := entity.Template{
+	newEvent := dto.Template{
 		EventUUID:   uuid.UUID{},
 		Title:       "Test Title",
 		Description: "Description",
@@ -66,7 +66,7 @@ func (suite *TemplateTestSuite) TestService_Store() {
 }
 
 func (suite *TemplateTestSuite) TestService_StoreBatch() {
-	newTemplates := []entity.Template{
+	newTemplates := []dto.Template{
 		{
 			EventUUID:   uuid.New(),
 			Title:       "Test 1",

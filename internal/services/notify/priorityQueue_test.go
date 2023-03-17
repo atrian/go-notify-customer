@@ -4,9 +4,9 @@ import (
 	"container/heap"
 	"testing"
 
-	"github.com/google/uuid"
+	"github.com/atrian/go-notify-customer/internal/dto"
 
-	"github.com/atrian/go-notify-customer/internal/services/notify/entity"
+	"github.com/google/uuid"
 )
 
 func TestPriorityQueue_Push(t *testing.T) {
@@ -14,7 +14,7 @@ func TestPriorityQueue_Push(t *testing.T) {
 	secondUUID := uuid.New()
 	maxUUID := uuid.New()
 
-	notifications := []entity.Notification{
+	notifications := []dto.Notification{
 		{
 			EventUUID: firstUUID,
 			Priority:  1,
@@ -35,19 +35,19 @@ func TestPriorityQueue_Push(t *testing.T) {
 	}
 
 	// Get max priority
-	topNotification := pq.Pop().(*entity.Notification)
+	topNotification := pq.Pop().(*dto.Notification)
 	if topNotification.EventUUID != maxUUID {
 		t.Errorf("got %q, wanted %q", topNotification.EventUUID, maxUUID)
 	}
 
 	// Get mid-priority
-	topNotification = pq.Pop().(*entity.Notification)
+	topNotification = pq.Pop().(*dto.Notification)
 	if topNotification.EventUUID != secondUUID {
 		t.Errorf("got %q, wanted %q", topNotification.EventUUID, secondUUID)
 	}
 
 	// Get low priority
-	topNotification = pq.Pop().(*entity.Notification)
+	topNotification = pq.Pop().(*dto.Notification)
 	if topNotification.EventUUID != firstUUID {
 		t.Errorf("got %q, wanted %q", topNotification.EventUUID, firstUUID)
 	}

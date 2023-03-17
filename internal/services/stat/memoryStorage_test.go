@@ -4,41 +4,41 @@ import (
 	"context"
 	"testing"
 
+	"github.com/atrian/go-notify-customer/internal/dto"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/google/uuid"
-
-	"github.com/atrian/go-notify-customer/internal/services/stat/entity"
 )
 
 type MemoryStorageTestSuite struct {
 	suite.Suite
 	storage Storager
-	stats   []entity.Stat
+	stats   []dto.Stat
 }
 
 func (suite *MemoryStorageTestSuite) SetupSuite() {
 	personOneUUID := uuid.New()
 	personTwoUUID := uuid.New()
 
-	suite.stats = []entity.Stat{
+	suite.stats = []dto.Stat{
 		{
 			NotificationUUID: uuid.New(),
 			PersonUUID:       personOneUUID,
-			Status:           entity.Sent,
+			Status:           dto.Sent,
 		}, {
 			NotificationUUID: uuid.New(),
 			PersonUUID:       personOneUUID,
-			Status:           entity.Failed,
+			Status:           dto.Failed,
 		}, {
 			NotificationUUID: uuid.New(),
 			PersonUUID:       personTwoUUID,
-			Status:           entity.Sent,
+			Status:           dto.Sent,
 		}, {
 			NotificationUUID: uuid.New(),
 			PersonUUID:       personTwoUUID,
-			Status:           entity.Sent,
+			Status:           dto.Sent,
 		},
 	}
 }

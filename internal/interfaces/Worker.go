@@ -1,6 +1,8 @@
 package interfaces
 
-import "github.com/atrian/go-notify-customer/internal/services/notificationDispatcher/entity"
+import (
+	"github.com/atrian/go-notify-customer/internal/dto"
+)
 
 // Worker интерфейс типового воркера для отправки сообщений
 type Worker interface {
@@ -11,7 +13,7 @@ type Worker interface {
 	Start(consumeQueue string, successQueue string, failQueue string)
 
 	// Send метод отправки сообщения через сервис провайдер на внешний сервис
-	Send(message entity.Message)
+	Send(message dto.Message)
 
 	// Stop корректная остановка воркера
 	Stop()

@@ -3,9 +3,9 @@ package interfaces
 import (
 	"context"
 
-	"github.com/google/uuid"
+	"github.com/atrian/go-notify-customer/internal/dto"
 
-	"github.com/atrian/go-notify-customer/internal/services/stat/entity"
+	"github.com/google/uuid"
 )
 
 // StatService Интерфейс сервиса хранения данных о бизнес событиях
@@ -15,8 +15,8 @@ type StatService interface {
 	BaseService
 
 	// All FindByPersonUUID FindByEventUUID - выдача статистики в разрезах
-	All(ctx context.Context) []entity.Stat
-	Store(stat entity.Stat) error
-	FindByPersonUUID(ctx context.Context, personUUID uuid.UUID) ([]entity.Stat, error)
-	FindByEventUUID(ctx context.Context, personUUID uuid.UUID) (entity.Stat, error)
+	All(ctx context.Context) []dto.Stat
+	Store(stat dto.Stat) error
+	FindByPersonUUID(ctx context.Context, personUUID uuid.UUID) ([]dto.Stat, error)
+	FindByEventUUID(ctx context.Context, personUUID uuid.UUID) (dto.Stat, error)
 }

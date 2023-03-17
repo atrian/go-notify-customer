@@ -4,22 +4,22 @@ import (
 	"context"
 	"testing"
 
+	"github.com/atrian/go-notify-customer/internal/dto"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/google/uuid"
-
-	"github.com/atrian/go-notify-customer/internal/services/template/entity"
 )
 
 type MemoryStorageTestSuite struct {
 	suite.Suite
 	storage   Storager
-	templates []entity.Template
+	templates []dto.Template
 }
 
 func (suite *MemoryStorageTestSuite) SetupSuite() {
-	suite.templates = []entity.Template{
+	suite.templates = []dto.Template{
 		{
 			TemplateUUID: uuid.New(),
 			EventUUID:    uuid.New(),

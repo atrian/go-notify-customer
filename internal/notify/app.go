@@ -7,12 +7,11 @@ import (
 	"net/http"
 
 	"github.com/atrian/go-notify-customer/config"
+	"github.com/atrian/go-notify-customer/internal/dto"
 	"github.com/atrian/go-notify-customer/internal/interfaces"
 	"github.com/atrian/go-notify-customer/internal/services/event"
 	"github.com/atrian/go-notify-customer/internal/services/notify"
-	notifyEntity "github.com/atrian/go-notify-customer/internal/services/notify/entity"
 	"github.com/atrian/go-notify-customer/internal/services/stat"
-	statEntity "github.com/atrian/go-notify-customer/internal/services/stat/entity"
 	"github.com/atrian/go-notify-customer/internal/services/template"
 	"github.com/atrian/go-notify-customer/pkg/logger"
 )
@@ -39,10 +38,10 @@ func New(ctx context.Context) App {
 	appLogger := logger.NewZapLogger()
 
 	// канал для передачи уведомлений
-	notificationChan := make(chan notifyEntity.Notification)
+	notificationChan := make(chan dto.Notification)
 
 	// канал для передачи статистики отправки
-	statChan := make(chan statEntity.Stat)
+	statChan := make(chan dto.Stat)
 
 	return App{
 		config: appConf,

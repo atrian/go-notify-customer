@@ -6,9 +6,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/uuid"
+	"github.com/atrian/go-notify-customer/internal/dto"
 
-	"github.com/atrian/go-notify-customer/internal/services/stat/entity"
+	"github.com/google/uuid"
 )
 
 const dateTimeFormat = "2006-01-02 15:04:05"
@@ -24,11 +24,11 @@ func NewMemoryStorage() *MemoryStorage {
 	return &ms
 }
 
-func (m *MemoryStorage) All(ctx context.Context) ([]entity.Stat, error) {
-	var stats []entity.Stat
+func (m *MemoryStorage) All(ctx context.Context) ([]dto.Stat, error) {
+	var stats []dto.Stat
 
 	m.data.Range(func(key, value interface{}) bool {
-		stat := value.(entity.Stat)
+		stat := value.(dto.Stat)
 		stats = append(stats, stat)
 		return true
 	})
@@ -36,7 +36,7 @@ func (m *MemoryStorage) All(ctx context.Context) ([]entity.Stat, error) {
 	return stats, nil
 }
 
-func (m *MemoryStorage) Store(ctx context.Context, stat entity.Stat) error {
+func (m *MemoryStorage) Store(ctx context.Context, stat dto.Stat) error {
 	stat.CreatedAt = time.Now().Format(dateTimeFormat) // сохраняем время записи
 
 	m.data.Store(stat.NotificationUUID, stat)
@@ -44,14 +44,14 @@ func (m *MemoryStorage) Store(ctx context.Context, stat entity.Stat) error {
 	return nil
 }
 
-func (m *MemoryStorage) GetByNotificationId(ctx context.Context, notificationUUID uuid.UUID) (entity.Stat, error) {
+func (m *MemoryStorage) GetByNotificationId(ctx context.Context, notificationUUID uuid.UUID) (dto.Stat, error) {
 	var (
-		stat  entity.Stat
+		stat  dto.Stat
 		found bool
 	)
 
 	m.data.Range(func(key, value interface{}) bool {
-		candidate := value.(entity.Stat)
+		candidate := value.(dto.Stat)
 		if candidate.NotificationUUID == notificationUUID {
 			stat = candidate
 			found = true
@@ -61,19 +61,19 @@ func (m *MemoryStorage) GetByNotificationId(ctx context.Context, notificationUUI
 	})
 
 	if !found {
-		return entity.Stat{}, NotFound
+		return dto.Stat{}, NotFound
 	}
 
 	return stat, nil
 }
 
-func (m *MemoryStorage) GetByPersonId(ctx context.Context, personUUID uuid.UUID) ([]entity.Stat, error) {
+func (m *MemoryStorage) GetByPersonId(ctx context.Context, personUUID uuid.UUID) ([]dto.Stat, error) {
 	var (
-		stats []entity.Stat
+		stats []dto.Stat
 	)
 
 	m.data.Range(func(key, value interface{}) bool {
-		candidate := value.(entity.Stat)
+		candidate := value.(dto.Stat)
 		if candidate.PersonUUID == personUUID {
 			stats = append(stats, candidate)
 		}

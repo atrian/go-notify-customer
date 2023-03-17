@@ -3,16 +3,16 @@ package notify
 import (
 	"testing"
 
-	"github.com/google/uuid"
+	"github.com/atrian/go-notify-customer/internal/dto"
 
-	"github.com/atrian/go-notify-customer/internal/services/notify/entity"
+	"github.com/google/uuid"
 )
 
 const bufferSize = 3
 
 func TestService_ProcessNotification(t *testing.T) {
-	resultChan := make(chan entity.Notification, bufferSize)
-	notifications := []entity.Notification{
+	resultChan := make(chan dto.Notification, bufferSize)
+	notifications := []dto.Notification{
 		{
 			EventUUID: uuid.New(),
 			Priority:  1,

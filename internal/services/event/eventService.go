@@ -3,9 +3,9 @@ package event
 import (
 	"context"
 
-	"github.com/google/uuid"
+	"github.com/atrian/go-notify-customer/internal/dto"
 
-	"github.com/atrian/go-notify-customer/internal/services/event/entity"
+	"github.com/google/uuid"
 )
 
 type Service struct {
@@ -28,7 +28,7 @@ func (e Service) Stop() {
 	panic("implement me")
 }
 
-func (e Service) All(ctx context.Context) []entity.Event {
+func (e Service) All(ctx context.Context) []dto.Event {
 	events, err := e.storage.All(ctx)
 
 	if err != nil {
@@ -38,18 +38,18 @@ func (e Service) All(ctx context.Context) []entity.Event {
 	return events
 }
 
-func (e Service) Store(ctx context.Context, event entity.Event) (entity.Event, error) {
+func (e Service) Store(ctx context.Context, event dto.Event) (dto.Event, error) {
 	event.EventUUID = uuid.New()
 
 	err := e.storage.Store(ctx, event)
 	if err != nil {
-		return entity.Event{}, err
+		return dto.Event{}, err
 	}
 
 	return event, nil
 }
 
-func (e Service) StoreBatch(ctx context.Context, events []entity.Event) ([]entity.Event, error) {
+func (e Service) StoreBatch(ctx context.Context, events []dto.Event) ([]dto.Event, error) {
 	for i := 0; i < len(events); i++ {
 		events[i].EventUUID = uuid.New()
 		err := e.storage.Store(ctx, events[i])
@@ -62,16 +62,16 @@ func (e Service) StoreBatch(ctx context.Context, events []entity.Event) ([]entit
 	return events, nil
 }
 
-func (e Service) Update(ctx context.Context, event entity.Event) (entity.Event, error) {
+func (e Service) Update(ctx context.Context, event dto.Event) (dto.Event, error) {
 	err := e.storage.Store(ctx, event)
 	if err != nil {
-		return entity.Event{}, err
+		return dto.Event{}, err
 	}
 
 	return event, nil
 }
 
-func (e Service) FindById(ctx context.Context, eventUUID uuid.UUID) (entity.Event, error) {
+func (e Service) FindById(ctx context.Context, eventUUID uuid.UUID) (dto.Event, error) {
 	return e.storage.GetById(ctx, eventUUID)
 }
 

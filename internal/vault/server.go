@@ -5,8 +5,9 @@ import (
 	"errors"
 	"fmt"
 
-	pb "github.com/atrian/go-notify-customer/proto"
 	"github.com/google/uuid"
+
+	pb "github.com/atrian/go-notify-customer/proto"
 )
 
 var BadRequest = errors.New("bad request")

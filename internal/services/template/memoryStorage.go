@@ -5,9 +5,9 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/google/uuid"
+	"github.com/atrian/go-notify-customer/internal/dto"
 
-	"github.com/atrian/go-notify-customer/internal/services/template/entity"
+	"github.com/google/uuid"
 )
 
 var NotFound = errors.New("not found")
@@ -21,11 +21,11 @@ func NewMemoryStorage() *MemoryStorage {
 	return &ms
 }
 
-func (m *MemoryStorage) All(ctx context.Context) ([]entity.Template, error) {
-	var templates []entity.Template
+func (m *MemoryStorage) All(ctx context.Context) ([]dto.Template, error) {
+	var templates []dto.Template
 
 	m.data.Range(func(key, value interface{}) bool {
-		template := value.(entity.Template)
+		template := value.(dto.Template)
 		templates = append(templates, template)
 		return true
 	})
@@ -33,36 +33,36 @@ func (m *MemoryStorage) All(ctx context.Context) ([]entity.Template, error) {
 	return templates, nil
 }
 
-func (m *MemoryStorage) Update(ctx context.Context, template entity.Template) error {
+func (m *MemoryStorage) Update(ctx context.Context, template dto.Template) error {
 	m.data.Store(template.TemplateUUID.String(), template)
 
 	return nil
 }
 
-func (m *MemoryStorage) Store(ctx context.Context, template entity.Template) error {
+func (m *MemoryStorage) Store(ctx context.Context, template dto.Template) error {
 	m.data.Store(template.TemplateUUID.String(), template)
 
 	return nil
 }
 
-func (m *MemoryStorage) GetById(ctx context.Context, templateUUID uuid.UUID) (entity.Template, error) {
+func (m *MemoryStorage) GetById(ctx context.Context, templateUUID uuid.UUID) (dto.Template, error) {
 	template, ok := m.data.Load(templateUUID.String())
 
 	if !ok {
-		return entity.Template{}, NotFound
+		return dto.Template{}, NotFound
 	}
 
-	return template.(entity.Template), nil
+	return template.(dto.Template), nil
 }
 
-func (m *MemoryStorage) GetByEventId(ctx context.Context, eventUUID uuid.UUID) (entity.Template, error) {
+func (m *MemoryStorage) GetByEventId(ctx context.Context, eventUUID uuid.UUID) (dto.Template, error) {
 	var (
-		template entity.Template
+		template dto.Template
 		exist    bool
 	)
 
 	m.data.Range(func(key, value interface{}) bool {
-		candidate := value.(entity.Template)
+		candidate := value.(dto.Template)
 		if candidate.EventUUID == eventUUID {
 			template = candidate
 			exist = true
@@ -72,7 +72,7 @@ func (m *MemoryStorage) GetByEventId(ctx context.Context, eventUUID uuid.UUID) (
 	})
 
 	if !exist {
-		return entity.Template{}, NotFound
+		return dto.Template{}, NotFound
 	}
 
 	return template, nil

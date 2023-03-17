@@ -6,16 +6,16 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/google/uuid"
+	"github.com/atrian/go-notify-customer/internal/dto"
 
-	"github.com/atrian/go-notify-customer/internal/services/event/entity"
+	"github.com/google/uuid"
 )
 
 func TestNewMemoryStorage(t *testing.T) {
 	ms := NewMemoryStorage()
 	ctx := context.TODO()
 
-	event := entity.Event{
+	event := dto.Event{
 		EventUUID:            uuid.New(),
 		Title:                "Test event",
 		Description:          "Test description",
@@ -23,7 +23,7 @@ func TestNewMemoryStorage(t *testing.T) {
 		NotificationChannels: []string{"sms", "email"},
 	}
 
-	event2 := entity.Event{
+	event2 := dto.Event{
 		EventUUID:            uuid.New(),
 		Title:                "Test event 2",
 		Description:          "Test description 2",
