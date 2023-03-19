@@ -11,8 +11,9 @@ import (
 )
 
 var (
-	_  serviceGateway = (*ServiceFacade)(nil)
-	re                = regexp.MustCompile(`(?m)\[([a-zA-Z]+)]`)
+	_          serviceGateway = (*ServiceFacade)(nil)
+	templateRe                = regexp.MustCompile(`(?m)\[([a-zA-Z]+\d*)]`)
+	spaceRe                   = regexp.MustCompile(`\s+`)
 )
 
 type contactVault interface {
@@ -30,11 +31,13 @@ type ServiceFacade struct {
 	}
 }
 
-func NewDispatcherServiceFacade(template interfaces.TemplateService, event interfaces.EventService) *ServiceFacade {
+func NewDispatcherServiceFacade(contact contactVault, template interfaces.TemplateService, event interfaces.EventService) *ServiceFacade {
 	f := ServiceFacade{
+		contact:  contact,
 		event:    event,
 		template: template,
 	}
+
 	return &f
 }
 
@@ -58,6 +61,20 @@ func (f *ServiceFacade) getEvent(ctx context.Context, eventUuid uuid.UUID) (dto.
 }
 
 func (f *ServiceFacade) prepareTemplate(template string, replaces []dto.MessageParam) string {
-	// TODO замена подстановок в тексте сообщения
-	return ""
+	// Собираем таблицу замен
+	replaceDict := make(map[string]string, len(replaces))
+	for _, el := range replaces {
+		replaceDict[el.Key] = el.Value
+	}
+
+	// Заменяем в строке все key1 в формате [key1] на значение replaceDict[key1]
+	result := templateRe.ReplaceAllFunc([]byte(template), func(bytes []byte) []byte {
+		key := string(bytes[1 : len(bytes)-1])
+		if val, ok := replaceDict[key]; ok {
+			return []byte(val)
+		}
+		return []byte{}
+	})
+
+	return spaceRe.ReplaceAllString(string(result), " ")
 }
