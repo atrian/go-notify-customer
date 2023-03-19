@@ -75,7 +75,7 @@ func (d Dispatcher) dispatch(message dto.Message) error {
 
 	err = d.ampqClient.Publish(d.config.GetMessageDispatchQueue(), jsonMessage)
 	if err != nil {
-		d.logger.Error("Message JSON marshal failed", err)
+		d.logger.Error("ampqClient.Publish error", err)
 		return err
 	}
 
@@ -161,7 +161,7 @@ func (d Dispatcher) buildMessages(notification dto.Notification) []dto.Message {
 
 			// и добавляем сообщение в слайс на отправку
 			messages = append(messages, dto.Message{
-				PersonUUID:         uuid.UUID{},
+				PersonUUID:         contact.PersonUUID,
 				Text:               template,
 				Channel:            notificationChannel,
 				DestinationAddress: relatedContact.Destination,

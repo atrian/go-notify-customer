@@ -7,7 +7,6 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/atrian/go-notify-customer/internal/dto"
-	"github.com/atrian/go-notify-customer/internal/interfaces"
 )
 
 var (
@@ -21,17 +20,21 @@ type contactVault interface {
 	Stop() error
 }
 
-type ServiceFacade struct {
-	contact  contactVault
-	template interface {
-		FindByEventId(ctx context.Context, eventUUID uuid.UUID) ([]dto.Template, error)
-	}
-	event interface {
-		FindById(ctx context.Context, eventUUID uuid.UUID) (dto.Event, error)
-	}
+type templateService interface {
+	FindByEventId(ctx context.Context, eventUUID uuid.UUID) ([]dto.Template, error)
 }
 
-func NewDispatcherServiceFacade(contact contactVault, template interfaces.TemplateService, event interfaces.EventService) *ServiceFacade {
+type eventService interface {
+	FindById(ctx context.Context, eventUUID uuid.UUID) (dto.Event, error)
+}
+
+type ServiceFacade struct {
+	contact  contactVault
+	template templateService
+	event    eventService
+}
+
+func NewDispatcherServiceFacade(contact contactVault, template templateService, event eventService) *ServiceFacade {
 	f := ServiceFacade{
 		contact:  contact,
 		event:    event,
