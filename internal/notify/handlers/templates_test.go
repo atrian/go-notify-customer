@@ -69,6 +69,65 @@ func ExampleHandler_UpdateTemplate() {
 	// 200 {"template_uuid":"c10a7fa8-f162-46ce-a97e-ff8718d7eb7d","event_uuid":"00000000-0000-0000-0000-000000000000","title":"Updated title","description":"Description","body":"Body","channel_type":"ChannelType"}
 }
 
+func ExampleHandler_DeleteTemplate() {
+	templateUUID, _ := uuid.Parse("c10a7fa8-f162-46ce-a97e-ff8718d7eb7d")
+
+	deleteEndpoint := fmt.Sprintf("/api/v1/templates/%v", templateUUID)
+
+	testTemplate := dto.Template{
+		TemplateUUID: templateUUID,
+		EventUUID:    uuid.UUID{},
+		Title:        "Test",
+		Description:  "Description",
+		Body:         "Body",
+		ChannelType:  "ChannelType",
+	}
+
+	// Подготавливаем все зависимости, логгер, конфигурацию приложения, хранилище (In Memory) и роутер
+	appLogger := logger.NewZapLogger()
+	appConf := mockHandlerConfig{}
+
+	tService := template.New()
+	_, _ = tService.Store(context.Background(), testTemplate)
+
+	h := handlers.New(&appConf, nil, nil, nil, tService, appLogger)
+
+	r := router.New(h, &appConf)
+
+	// Запускаем тестовый сервер
+	testServer := httptest.NewServer(r)
+	defer testServer.Close()
+
+	// Удаление данных
+	request, _ := http.NewRequest(http.MethodDelete, testServer.URL+deleteEndpoint, nil)
+
+	response, err := http.DefaultClient.Do(request)
+	if err != nil {
+		appLogger.Error("http.DefaultClient.Do err", err)
+	}
+
+	responseBody, _ := io.ReadAll(response.Body)
+	_ = response.Body.Close()
+
+	// В случае успеха сервис отвечает кодом 200
+	appLogger.Debug(fmt.Sprintf("DELETED OK - status: %v", response.StatusCode))
+
+	response, err = http.DefaultClient.Do(request)
+	if err != nil {
+		appLogger.Error("http.DefaultClient.Do err", err)
+	}
+
+	// проверяем что запись удалена и повторный вызов вернет 404 ошибку
+	responseBody, _ = io.ReadAll(response.Body)
+	_ = response.Body.Close()
+
+	appLogger.Debug(fmt.Sprintf("SECOND ATTEMPT FAILED - status: %v", response.StatusCode))
+	fmt.Println(response.StatusCode, string(responseBody))
+
+	// Output:
+	// 404 Not found
+}
+
 type mockHandlerConfig struct {
 }
 

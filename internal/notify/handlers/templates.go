@@ -5,6 +5,8 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 	"io"
 	"net/http"
 	"strings"
@@ -29,7 +31,7 @@ func (h *Handler) UpdateTemplate() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		template, err := h.unmarshallTemplate(r)
 		if err != nil {
-			h.logger.Error("UpdateJSONMetrics cant unmarshallMetric", err)
+			h.logger.Error("UpdateTemplate cant unmarshallTemplate", err)
 			http.Error(w, "Bad JSON", http.StatusBadRequest)
 		}
 
@@ -54,6 +56,46 @@ func (h *Handler) UpdateTemplate() http.HandlerFunc {
 		if jsonEncErr != nil {
 			h.logger.Error("json.NewEncoder err", jsonEncErr)
 		}
+	}
+}
+
+// DeleteTemplate удаление шаблона сообщения DELETE /api/v1/templates/{UUID-v4}
+//
+//	@Tags Template
+//	@Summary удаление шаблона сообщения
+//	@Produce json
+//	@Param template_uuid path string true "ID шаблона в формате UUID v4"
+//	@Success 200
+//	@Failure 400
+//	@Failure 404
+//	@Failure 500
+//	@Router /api/v1/templates/{UUID-v4} [delete]
+func (h *Handler) DeleteTemplate() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		param := chi.URLParam(r, "templateUUID")
+
+		templateUUID, err := uuid.Parse(param)
+		if err != nil {
+			h.logger.Error("DeleteTemplate Parse templateUUID", err)
+			http.Error(w, "Bad templateUUID", http.StatusBadRequest)
+		}
+
+		err = h.services.template.DeleteById(context.Background(), templateUUID)
+
+		if err != nil {
+			if errors.Is(err, templateErrors.NotFound) {
+				http.Error(w, "Not found", http.StatusNotFound)
+				return
+			}
+
+			http.Error(w, "Bad JSON", http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("content-type", h.conf.GetDefaultResponseContentType())
+		w.WriteHeader(http.StatusOK)
+
+		h.logger.Debug("Request OK")
 	}
 }
 

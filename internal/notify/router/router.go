@@ -48,7 +48,7 @@ func (r *Router) RegisterRoutes(handler *handlers.Handler) *Router {
 					// PUT /templates/93ebac94-cf39-4728-9bba-472ac93a4368
 					r.Put("/", handler.UpdateTemplate())
 					// DELETE /templates/93ebac94-cf39-4728-9bba-472ac93a4368
-					r.Delete("/", nil)
+					r.Delete("/", handler.DeleteTemplate())
 				})
 			})
 
