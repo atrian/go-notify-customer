@@ -63,7 +63,7 @@ func (e Service) StoreBatch(ctx context.Context, events []dto.Event) ([]dto.Even
 }
 
 func (e Service) Update(ctx context.Context, event dto.Event) (dto.Event, error) {
-	err := e.storage.Store(ctx, event)
+	err := e.storage.Update(ctx, event)
 	if err != nil {
 		return dto.Event{}, err
 	}

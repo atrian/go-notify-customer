@@ -16,32 +16,26 @@ import (
 	"github.com/atrian/go-notify-customer/internal/dto"
 	"github.com/atrian/go-notify-customer/internal/notify/handlers"
 	"github.com/atrian/go-notify-customer/internal/notify/router"
-	"github.com/atrian/go-notify-customer/internal/services/template"
+	"github.com/atrian/go-notify-customer/internal/services/event"
 	"github.com/atrian/go-notify-customer/pkg/logger"
 )
 
-func ExampleHandler_UpdateTemplate() {
-	templateUUID, _ := uuid.Parse("c10a7fa8-f162-46ce-a97e-ff8718d7eb7d")
-
-	updateEndpoint := fmt.Sprintf("/api/v1/templates/%v", templateUUID)
-
-	testTemplate := dto.Template{
-		TemplateUUID: templateUUID,
-		EventUUID:    uuid.UUID{},
-		Title:        "Test",
-		Description:  "Description",
-		Body:         "Body",
-		ChannelType:  "ChannelType",
+func ExampleHandler_UpdateEvent() {
+	testEvent := dto.Event{
+		Title:                "Test",
+		Description:          "Description",
+		DefaultPriority:      1,
+		NotificationChannels: []string{"sms"},
 	}
 
 	// Подготавливаем все зависимости, логгер, конфигурацию приложения, хранилище (In Memory) и роутер
 	appLogger := logger.NewZapLogger()
 	appConf := mockHandlerConfig{}
 
-	tService := template.New()
-	_, _ = tService.Store(context.Background(), testTemplate)
+	eService := event.New()
+	stored, _ := eService.Store(context.Background(), testEvent)
 
-	h := handlers.New(&appConf, nil, nil, nil, tService, appLogger)
+	h := handlers.New(&appConf, eService, nil, nil, nil, appLogger)
 
 	r := router.New(h, &appConf)
 
@@ -50,9 +44,12 @@ func ExampleHandler_UpdateTemplate() {
 	defer testServer.Close()
 
 	// Обновление данных
-	testTemplate.Title = "Updated title"
-	jData, _ := json.Marshal(testTemplate)
+	testEvent.Title = "Updated title"
+	testEvent.EventUUID = stored.EventUUID
+	jData, _ := json.Marshal(testEvent)
 	jReader := bytes.NewReader(jData)
+
+	updateEndpoint := fmt.Sprintf("/api/v1/events/%v", stored.EventUUID)
 
 	request, _ := http.NewRequest(http.MethodPut, testServer.URL+updateEndpoint, jReader)
 
@@ -64,41 +61,41 @@ func ExampleHandler_UpdateTemplate() {
 	responseBody, _ := io.ReadAll(response.Body)
 	_ = response.Body.Close()
 
+	// Манипуляции для отсечения изменяющегося при сохранении UUID
+	var getResult dto.Event
+	_ = json.Unmarshal(responseBody, &getResult)
+
 	// В случае успеха сервис отвечает кодом 200 и JSON содержащим текущее значение шаблона
-	fmt.Println(response.StatusCode, string(responseBody))
+	fmt.Println(response.StatusCode, getResult.Title)
 
 	// Output:
-	// 200 {"template_uuid":"c10a7fa8-f162-46ce-a97e-ff8718d7eb7d","event_uuid":"00000000-0000-0000-0000-000000000000","title":"Updated title","description":"Description","body":"Body","channel_type":"ChannelType"}
+	// 200 Updated title
 }
 
-func ExampleHandler_DeleteTemplate() {
-	templateUUID, _ := uuid.Parse("c10a7fa8-f162-46ce-a97e-ff8718d7eb7d")
-
-	deleteEndpoint := fmt.Sprintf("/api/v1/templates/%v", templateUUID)
-
-	testTemplate := dto.Template{
-		TemplateUUID: templateUUID,
-		EventUUID:    uuid.UUID{},
-		Title:        "Test",
-		Description:  "Description",
-		Body:         "Body",
-		ChannelType:  "ChannelType",
+func ExampleHandler_DeleteEvent() {
+	testEvent := dto.Event{
+		Title:                "Test",
+		Description:          "Description",
+		DefaultPriority:      1,
+		NotificationChannels: []string{"sms"},
 	}
 
 	// Подготавливаем все зависимости, логгер, конфигурацию приложения, хранилище (In Memory) и роутер
 	appLogger := logger.NewZapLogger()
 	appConf := mockHandlerConfig{}
 
-	tService := template.New()
-	_, _ = tService.Store(context.Background(), testTemplate)
+	eService := event.New()
+	stored, _ := eService.Store(context.Background(), testEvent)
 
-	h := handlers.New(&appConf, nil, nil, nil, tService, appLogger)
+	h := handlers.New(&appConf, eService, nil, nil, nil, appLogger)
 
 	r := router.New(h, &appConf)
 
 	// Запускаем тестовый сервер
 	testServer := httptest.NewServer(r)
 	defer testServer.Close()
+
+	deleteEndpoint := fmt.Sprintf("/api/v1/events/%v", stored.EventUUID)
 
 	// Удаление данных
 	request, _ := http.NewRequest(http.MethodDelete, testServer.URL+deleteEndpoint, nil)
@@ -130,25 +127,24 @@ func ExampleHandler_DeleteTemplate() {
 	// 404 Not found
 }
 
-func ExampleHandler_GetTemplate() {
-	testTemplate := dto.Template{
-		EventUUID:   uuid.UUID{},
-		Title:       "Test",
-		Description: "Description",
-		Body:        "Body",
-		ChannelType: "ChannelType",
+func ExampleHandler_GetEvent() {
+	testEvent := dto.Event{
+		Title:                "Title",
+		Description:          "Description",
+		DefaultPriority:      0,
+		NotificationChannels: nil,
 	}
 
 	// Подготавливаем все зависимости, логгер, конфигурацию приложения, хранилище (In Memory) и роутер
 	appLogger := logger.NewZapLogger()
 	appConf := mockHandlerConfig{}
 
-	tService := template.New()
-	stored, _ := tService.Store(context.Background(), testTemplate)
+	eService := event.New()
+	stored, _ := eService.Store(context.Background(), testEvent)
 
-	getEndpoint := fmt.Sprintf("/api/v1/templates/%v", stored.TemplateUUID)
+	getEndpoint := fmt.Sprintf("/api/v1/events/%v", stored.EventUUID)
 
-	h := handlers.New(&appConf, nil, nil, nil, tService, appLogger)
+	h := handlers.New(&appConf, eService, nil, nil, nil, appLogger)
 
 	r := router.New(h, &appConf)
 
@@ -171,43 +167,41 @@ func ExampleHandler_GetTemplate() {
 	appLogger.Debug(fmt.Sprintf("GET OK - status: %v", response.StatusCode))
 
 	// Манипуляции для отсечения изменяющегося при сохранении UUID
-	var getResult dto.Template
+	var getResult dto.Event
 	_ = json.Unmarshal(responseBody, &getResult)
-	getResult.TemplateUUID = uuid.UUID{}
+	getResult.EventUUID = uuid.UUID{}
 	fmt.Println(response.StatusCode, getResult)
 
 	// Output:
-	// 200 {00000000-0000-0000-0000-000000000000 00000000-0000-0000-0000-000000000000 Test Description Body ChannelType}
+	// 200 {00000000-0000-0000-0000-000000000000 Title Description 0 []}
 }
 
-func ExampleHandler_GetTemplates() {
-	testTemplate := dto.Template{
-		EventUUID:   uuid.UUID{},
-		Title:       "GetAllTest",
-		Description: "Description",
-		Body:        "Body",
-		ChannelType: "ChannelType",
+func ExampleHandler_GetEvents() {
+	testEvent := dto.Event{
+		Title:                "Title 1",
+		Description:          "Description 1",
+		DefaultPriority:      0,
+		NotificationChannels: nil,
 	}
 
-	testTemplate2 := dto.Template{
-		EventUUID:   uuid.UUID{},
-		Title:       "Test_2",
-		Description: "Description",
-		Body:        "Body",
-		ChannelType: "ChannelType",
+	testEvent2 := dto.Event{
+		Title:                "Title 2",
+		Description:          "Description 2",
+		DefaultPriority:      0,
+		NotificationChannels: nil,
 	}
 
 	// Подготавливаем все зависимости, логгер, конфигурацию приложения, хранилище (In Memory) и роутер
 	appLogger := logger.NewZapLogger()
 	appConf := mockHandlerConfig{}
 
-	tService := template.New()
-	_, _ = tService.Store(context.Background(), testTemplate)
-	_, _ = tService.Store(context.Background(), testTemplate2)
+	service := event.New()
+	_, _ = service.Store(context.Background(), testEvent)
+	_, _ = service.Store(context.Background(), testEvent2)
 
-	getEndpoint := fmt.Sprintf("/api/v1/templates")
+	getEndpoint := fmt.Sprintf("/api/v1/events")
 
-	h := handlers.New(&appConf, nil, nil, nil, tService, appLogger)
+	h := handlers.New(&appConf, service, nil, nil, nil, appLogger)
 
 	r := router.New(h, &appConf)
 
@@ -230,16 +224,14 @@ func ExampleHandler_GetTemplates() {
 	appLogger.Debug(fmt.Sprintf("GET OK - status: %v", response.StatusCode))
 
 	// Манипуляции для отсечения изменяющегося при сохранении UUID
-	var getResult []dto.Template
+	var getResult []dto.Event
 	_ = json.Unmarshal(responseBody, &getResult)
 
 	stableSlice := make([]string, 0, 2)
 	for _, t := range getResult {
 		checkThis := strings.Builder{}
 		checkThis.WriteString(t.Title)
-		checkThis.WriteString(t.Body)
 		checkThis.WriteString(t.Description)
-		checkThis.WriteString(t.ChannelType)
 		stableSlice = append(stableSlice, checkThis.String())
 	}
 
@@ -248,27 +240,26 @@ func ExampleHandler_GetTemplates() {
 	fmt.Println(response.StatusCode, stableSlice)
 
 	// Output:
-	// 200 [GetAllTestBodyDescriptionChannelType Test_2BodyDescriptionChannelType]
+	// 200 [Title 1Description 1 Title 2Description 2]
 }
 
-func ExampleHandler_StoreTemplate() {
-	storeEndpoint := fmt.Sprintf("/api/v1/templates")
+func ExampleHandler_StoreEvent() {
+	storeEndpoint := fmt.Sprintf("/api/v1/events")
 
-	testTemplate := dto.IncomingTemplate{
-		EventUUID:   uuid.UUID{},
-		Title:       "TestStoreTemplate",
-		Description: "Description",
-		Body:        "Body",
-		ChannelType: "ChannelType",
+	testTemplate := dto.IncomingEvent{
+		Title:                "EventTitle",
+		Description:          "Description",
+		DefaultPriority:      1,
+		NotificationChannels: []string{"sms"},
 	}
 
 	// Подготавливаем все зависимости, логгер, конфигурацию приложения, хранилище (In Memory) и роутер
 	appLogger := logger.NewZapLogger()
 	appConf := mockHandlerConfig{}
 
-	tService := template.New()
+	service := event.New()
 
-	h := handlers.New(&appConf, nil, nil, nil, tService, appLogger)
+	h := handlers.New(&appConf, service, nil, nil, nil, appLogger)
 
 	r := router.New(h, &appConf)
 
@@ -291,18 +282,16 @@ func ExampleHandler_StoreTemplate() {
 	_ = response.Body.Close()
 
 	// Манипуляции для отсечения изменяющегося при сохранении UUID
-	var getResult dto.Template
+	var getResult dto.Event
 	_ = json.Unmarshal(responseBody, &getResult)
 
 	checkThis := strings.Builder{}
 	checkThis.WriteString(getResult.Title)
 	checkThis.WriteString(getResult.Description)
-	checkThis.WriteString(getResult.Body)
-	checkThis.WriteString(getResult.ChannelType)
 
 	// В случае успеха сервис отвечает кодом 200 и JSON содержащим текущее значение шаблона
 	fmt.Println(response.StatusCode, checkThis.String())
 
 	// Output:
-	// 200 TestStoreTemplateDescriptionBodyChannelType
+	// 200 EventTitleDescription
 }

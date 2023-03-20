@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"compress/gzip"
 	"context"
 	"encoding/json"
 	"errors"
@@ -233,13 +232,4 @@ func (h *Handler) unmarshallTemplate(r *http.Request) (dto.Template, error) {
 	}
 
 	return template, nil
-}
-
-// decodeGzipBody распаковка GZIP тела запроса
-func (h *Handler) decodeGzipBody(gzipR io.Reader) io.Reader {
-	gz, err := gzip.NewReader(gzipR)
-	if err != nil {
-		h.logger.Error("decodeGzipBody cant set up gzip decoder", err)
-	}
-	return gz
 }

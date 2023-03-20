@@ -1,6 +1,10 @@
 package handlers
 
-import "github.com/atrian/go-notify-customer/internal/interfaces"
+import (
+	"compress/gzip"
+	"github.com/atrian/go-notify-customer/internal/interfaces"
+	"io"
+)
 
 type Handler struct {
 	services services
@@ -40,4 +44,13 @@ func New(
 	}
 
 	return &h
+}
+
+// decodeGzipBody распаковка GZIP тела запроса
+func (h *Handler) decodeGzipBody(gzipR io.Reader) io.Reader {
+	gz, err := gzip.NewReader(gzipR)
+	if err != nil {
+		h.logger.Error("decodeGzipBody cant set up gzip decoder", err)
+	}
+	return gz
 }

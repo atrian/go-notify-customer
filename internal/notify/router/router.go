@@ -52,6 +52,21 @@ func (r *Router) RegisterRoutes(handler *handlers.Handler) *Router {
 				})
 			})
 
+			// Сервис бизнес событий
+			r.Route("/events", func(r chi.Router) {
+				r.Get("/", handler.GetEvents())   // GET /events
+				r.Post("/", handler.StoreEvent()) // POST /events
+
+				r.Route("/{eventUUID}", func(r chi.Router) {
+					// GET /events/93ebac94-cf39-4728-9bba-472ac93a4368
+					r.Get("/", handler.GetEvent())
+					// PUT /events/93ebac94-cf39-4728-9bba-472ac93a4368
+					r.Put("/", handler.UpdateEvent())
+					// DELETE /events/93ebac94-cf39-4728-9bba-472ac93a4368
+					r.Delete("/", handler.DeleteEvent())
+				})
+			})
+
 		})
 	})
 
