@@ -67,6 +67,16 @@ func (r *Router) RegisterRoutes(handler *handlers.Handler) *Router {
 				})
 			})
 
+			// Сервис статистики
+			r.Route("/stats", func(r chi.Router) {
+				// GET /stats
+				r.Get("/", handler.GetStats())
+				// GET /stats/person/{personUUID}
+				r.Get("/person/{personUUID}", handler.GetStatByPersonUUID())
+				// GET /stats/person/{notificationUUID}
+				r.Get("/notification/{notificationUUID}", handler.GetStatByNotificationId())
+			})
+
 		})
 	})
 

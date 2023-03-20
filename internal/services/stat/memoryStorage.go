@@ -4,11 +4,10 @@ import (
 	"context"
 	"errors"
 	"sync"
-	"time"
-
-	"github.com/atrian/go-notify-customer/internal/dto"
 
 	"github.com/google/uuid"
+
+	"github.com/atrian/go-notify-customer/internal/dto"
 )
 
 const dateTimeFormat = "2006-01-02 15:04:05"
@@ -37,34 +36,29 @@ func (m *MemoryStorage) All(ctx context.Context) ([]dto.Stat, error) {
 }
 
 func (m *MemoryStorage) Store(ctx context.Context, stat dto.Stat) error {
-	stat.CreatedAt = time.Now().Format(dateTimeFormat) // сохраняем время записи
-
-	m.data.Store(stat.NotificationUUID, stat)
+	m.data.Store(stat.StatUUID, stat)
 
 	return nil
 }
 
-func (m *MemoryStorage) GetByNotificationId(ctx context.Context, notificationUUID uuid.UUID) (dto.Stat, error) {
+func (m *MemoryStorage) GetByNotificationId(ctx context.Context, notificationUUID uuid.UUID) ([]dto.Stat, error) {
 	var (
-		stat  dto.Stat
-		found bool
+		stats []dto.Stat
 	)
 
 	m.data.Range(func(key, value interface{}) bool {
 		candidate := value.(dto.Stat)
 		if candidate.NotificationUUID == notificationUUID {
-			stat = candidate
-			found = true
-			return false
+			stats = append(stats, candidate)
 		}
 		return true
 	})
 
-	if !found {
-		return dto.Stat{}, NotFound
+	if len(stats) == 0 {
+		return nil, NotFound
 	}
 
-	return stat, nil
+	return stats, nil
 }
 
 func (m *MemoryStorage) GetByPersonId(ctx context.Context, personUUID uuid.UUID) ([]dto.Stat, error) {

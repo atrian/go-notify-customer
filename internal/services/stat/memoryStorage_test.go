@@ -24,18 +24,22 @@ func (suite *MemoryStorageTestSuite) SetupSuite() {
 
 	suite.stats = []dto.Stat{
 		{
+			StatUUID:         uuid.New(),
 			NotificationUUID: uuid.New(),
 			PersonUUID:       personOneUUID,
 			Status:           dto.Sent,
 		}, {
+			StatUUID:         uuid.New(),
 			NotificationUUID: uuid.New(),
 			PersonUUID:       personOneUUID,
 			Status:           dto.Failed,
 		}, {
+			StatUUID:         uuid.New(),
 			NotificationUUID: uuid.New(),
 			PersonUUID:       personTwoUUID,
 			Status:           dto.Sent,
 		}, {
+			StatUUID:         uuid.New(),
 			NotificationUUID: uuid.New(),
 			PersonUUID:       personTwoUUID,
 			Status:           dto.Sent,
@@ -57,9 +61,8 @@ func (suite *MemoryStorageTestSuite) Test_GetByNotificationId() {
 
 	// Запрос существующего объекта
 	result, err := suite.storage.GetByNotificationId(context.TODO(), suite.stats[0].NotificationUUID)
-	result.CreatedAt = "" // сбрасываем данные о времени записи для сравнения
 	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), result, suite.stats[0])
+	assert.Equal(suite.T(), 1, len(result))
 }
 
 func (suite *MemoryStorageTestSuite) Test_GetByPersonId() {
@@ -71,13 +74,13 @@ func (suite *MemoryStorageTestSuite) Test_GetByPersonId() {
 	result, err := suite.storage.GetByPersonId(context.TODO(), suite.stats[0].PersonUUID)
 	assert.NoError(suite.T(), err)
 	// Исходя из тестовых данных ожидаем 2 элемента на 1 идентификатор клиента
-	assert.Equal(suite.T(), len(result), 2)
+	assert.Equal(suite.T(), 2, len(result))
 }
 
 func (suite *MemoryStorageTestSuite) Test_All() {
 	result, err := suite.storage.All(context.TODO())
 	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), len(result), len(suite.stats))
+	assert.Equal(suite.T(), len(suite.stats), len(result))
 }
 
 // Для запуска через Go test

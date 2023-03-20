@@ -4,11 +4,11 @@ import (
 	"context"
 	"testing"
 
-	"github.com/atrian/go-notify-customer/internal/dto"
-
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/atrian/go-notify-customer/internal/dto"
 )
 
 type StatTestSuite struct {
@@ -74,10 +74,11 @@ func (suite *StatTestSuite) Test_Store() {
 	assert.NoError(suite.T(), err)
 
 	// Запрос существующего объекта
-	result, err := suite.service.FindByEventUUID(context.TODO(), newStat.NotificationUUID)
-	result.CreatedAt = "" // опускаем временную метку для сравнения
+	result, err := suite.service.FindByNotificationId(context.TODO(), newStat.NotificationUUID)
+	result[0].StatUUID = uuid.UUID{} // сбрасываем UUID для сравнения
+	result[0].CreatedAt = ""         // опускаем временную метку для сравнения
 	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), newStat, result)
+	assert.Equal(suite.T(), newStat, result[0])
 }
 
 func (suite *StatTestSuite) Test_FindByPersonUUID() {
@@ -92,16 +93,17 @@ func (suite *StatTestSuite) Test_FindByPersonUUID() {
 	assert.Equal(suite.T(), 2, len(result)) // по условиям теста у нас 2 события на человека
 }
 
-func (suite *StatTestSuite) Test_FindByEventUUID() {
+func (suite *StatTestSuite) Test_FindByNotificationId() {
 	// Запрос несуществующего объекта
-	_, err := suite.service.FindByEventUUID(context.TODO(), uuid.New())
+	_, err := suite.service.FindByNotificationId(context.TODO(), uuid.New())
 	assert.ErrorIs(suite.T(), err, NotFound)
 
 	// Запрос существующего объекта
-	result, err := suite.service.FindByEventUUID(context.TODO(), suite.stats[0].NotificationUUID)
-	result.CreatedAt = "" // опускаем временную метку для сравнения
+	result, err := suite.service.FindByNotificationId(context.TODO(), suite.stats[0].NotificationUUID)
+	result[0].StatUUID = uuid.UUID{} // сбрасываем UUID для сравнения
+	result[0].CreatedAt = ""         // опускаем временную метку для сравнения
 	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), suite.stats[0], result)
+	assert.Equal(suite.T(), []dto.Stat{suite.stats[0]}, result)
 }
 
 // Для запуска через Go test

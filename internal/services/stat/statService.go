@@ -2,10 +2,11 @@ package stat
 
 import (
 	"context"
-
-	"github.com/atrian/go-notify-customer/internal/dto"
+	"time"
 
 	"github.com/google/uuid"
+
+	"github.com/atrian/go-notify-customer/internal/dto"
 )
 
 type Service struct {
@@ -57,6 +58,9 @@ func (s Service) All(ctx context.Context) []dto.Stat {
 }
 
 func (s Service) Store(stat dto.Stat) error {
+	stat.StatUUID = uuid.New()
+	stat.CreatedAt = time.Now().Format(dateTimeFormat) // сохраняем время записи
+
 	return s.storage.Store(s.ctx, stat)
 }
 
@@ -64,6 +68,6 @@ func (s Service) FindByPersonUUID(ctx context.Context, personUUID uuid.UUID) ([]
 	return s.storage.GetByPersonId(ctx, personUUID)
 }
 
-func (s Service) FindByEventUUID(ctx context.Context, personUUID uuid.UUID) (dto.Stat, error) {
-	return s.storage.GetByNotificationId(ctx, personUUID)
+func (s Service) FindByNotificationId(ctx context.Context, notificationUUID uuid.UUID) ([]dto.Stat, error) {
+	return s.storage.GetByNotificationId(ctx, notificationUUID)
 }

@@ -18,5 +18,5 @@ type StatService interface {
 	All(ctx context.Context) []dto.Stat
 	Store(stat dto.Stat) error
 	FindByPersonUUID(ctx context.Context, personUUID uuid.UUID) ([]dto.Stat, error)
-	FindByEventUUID(ctx context.Context, personUUID uuid.UUID) (dto.Stat, error)
+	FindByNotificationId(ctx context.Context, notificationUUID uuid.UUID) ([]dto.Stat, error)
 }
