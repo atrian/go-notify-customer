@@ -77,6 +77,11 @@ func (r *Router) RegisterRoutes(handler *handlers.Handler) *Router {
 				r.Get("/notification/{notificationUUID}", handler.GetStatByNotificationId())
 			})
 
+			// Сервис уведомлений
+			r.Route("/notifications", func(r chi.Router) {
+				r.Post("/", handler.ProcessNotifications())
+			})
+
 		})
 	})
 
