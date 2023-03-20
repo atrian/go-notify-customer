@@ -2,9 +2,34 @@ package config
 
 import (
 	"flag"
-	"github.com/caarlos0/env/v6"
 	"log"
+
+	"github.com/caarlos0/env/v6"
 )
+
+var _ senderConfig = (*Config)(nil)
+
+type senderConfig interface {
+	GetAmpqDSN() string
+	GetNotificationQueue() string
+	GetFailedWorksQueue() string
+	mailConfig
+	twilioConfig
+}
+
+type mailConfig interface {
+	GetMailSenderAddress() string
+	GetMailSMTPHost() string
+	GetMailLogin() string
+	GetMailPassword() string
+	GetMailMessageTheme() string
+}
+
+type twilioConfig interface {
+	GetTwilioAccountSid() string
+	GetTwilioAuthToken() string
+	GetTwilioSenderPhone() string
+}
 
 type Config struct {
 	address           string `env:"NC_ADDRESS"`
@@ -12,6 +37,10 @@ type Config struct {
 	ampqDSN           string `env:"NC_AMPQDSN"`
 	notificationQueue string `env:"NC_DISPATCH_QUEUE"`
 	failedWorksQueue  string `env:"NC_FAILED_QUEUE"`
+}
+
+func (config *Config) GetAmpqDSN() string {
+	return config.ampqDSN
 }
 
 func (config *Config) GetWebServerAddress() string {
@@ -28,6 +57,46 @@ func (config *Config) GetNotificationQueue() string {
 
 func (config *Config) GetFailedWorksQueue() string {
 	return config.failedWorksQueue
+}
+
+func (config *Config) GetMailSenderAddress() string {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (config *Config) GetMailSMTPHost() string {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (config *Config) GetMailLogin() string {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (config *Config) GetMailPassword() string {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (config *Config) GetMailMessageTheme() string {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (config *Config) GetTwilioAccountSid() string {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (config *Config) GetTwilioAuthToken() string {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (config *Config) GetTwilioSenderPhone() string {
+	//TODO implement me
+	panic("implement me")
 }
 
 func NewConfig() Config {
