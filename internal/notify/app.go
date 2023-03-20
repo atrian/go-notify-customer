@@ -10,9 +10,11 @@ import (
 	"github.com/atrian/go-notify-customer/internal/dto"
 	"github.com/atrian/go-notify-customer/internal/interfaces"
 	"github.com/atrian/go-notify-customer/internal/services/event"
+	"github.com/atrian/go-notify-customer/internal/services/notificationDispatcher"
 	"github.com/atrian/go-notify-customer/internal/services/notify"
 	"github.com/atrian/go-notify-customer/internal/services/stat"
 	"github.com/atrian/go-notify-customer/internal/services/template"
+	"github.com/atrian/go-notify-customer/pkg/ampq"
 	"github.com/atrian/go-notify-customer/pkg/logger"
 )
 
@@ -43,14 +45,25 @@ func New(ctx context.Context) App {
 	// канал для передачи статистики отправки
 	statChan := make(chan dto.Stat)
 
+	// Подготовка зависимостей сервисов
+	ampqClient := ampq.New("", appLogger)
+	notificationService := notify.New(notificationChan)
+	eventService := event.New()
+	templateService := template.New()
+	statisticService := stat.New(ctx, statChan)
+
+	contactVault := notificationDispatcher.NewContactVaultClient(&appConf, appLogger)
+	serviceFacade := notificationDispatcher.NewDispatcherServiceFacade(contactVault, templateService, eventService)
+	dispatcherService := notificationDispatcher.New(ctx, notificationChan, &appConf, serviceFacade, ampqClient, appLogger)
+
 	return App{
 		config: appConf,
 		services: services{
-			notificationService:    notify.New(notificationChan),
-			notificationDispatcher: nil,
-			eventService:           event.New(),
-			templateService:        template.New(),
-			statisticService:       stat.New(ctx, statChan),
+			notificationService:    notificationService,
+			notificationDispatcher: dispatcherService,
+			eventService:           eventService,
+			templateService:        templateService,
+			statisticService:       statisticService,
 		},
 		logger: appLogger,
 	}
@@ -77,12 +90,12 @@ func (a App) Run() {
 	a.services.templateService,
 	a.logger))*/
 
-	startMessage := fmt.Sprintf("Server started @ %v", a.config.Address)
+	startMessage := fmt.Sprintf("Server started @ %v", a.config.GetWebServerAddress())
 	a.logger.Info(startMessage)
 
 	// запуск веб сервера, по умолчанию с адресом localhost, порт 8080
 	// TODO прокинуть роутер в http сервер
-	log.Fatal(http.ListenAndServe(a.config.Address, nil))
+	log.Fatal(http.ListenAndServe(a.config.GetWebServerAddress(), nil))
 }
 
 func (a App) Stop() {

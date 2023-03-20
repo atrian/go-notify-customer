@@ -20,7 +20,7 @@ type serviceGateway interface {
 }
 
 type dispatcherConfig interface {
-	GetMessageDispatchQueue() string
+	GetNotificationQueue() string
 }
 
 type Dispatcher struct {
@@ -56,7 +56,7 @@ func New(
 // запуск прослушивания канала
 func (d Dispatcher) Start() {
 	// миграция AMPQ очередей
-	d.ampqClient.MigrateDurableQueues(d.config.GetMessageDispatchQueue())
+	d.ampqClient.MigrateDurableQueues(d.config.GetNotificationQueue())
 
 	// слушаем канал с уведомлениями, строим сообщения и отправляем на исполнение
 	go d.listenInputChannel(d.ctx, d.notificationChan)
@@ -73,7 +73,7 @@ func (d Dispatcher) dispatch(message dto.Message) error {
 		return err
 	}
 
-	err = d.ampqClient.Publish(d.config.GetMessageDispatchQueue(), jsonMessage)
+	err = d.ampqClient.Publish(d.config.GetNotificationQueue(), jsonMessage)
 	if err != nil {
 		d.logger.Error("ampqClient.Publish error", err)
 		return err
@@ -162,6 +162,7 @@ func (d Dispatcher) buildMessages(notification dto.Notification) []dto.Message {
 			// и добавляем сообщение в слайс на отправку
 			messages = append(messages, dto.Message{
 				PersonUUID:         contact.PersonUUID,
+				NotificationUUID:   notification.NotificationUUID,
 				Text:               template,
 				Channel:            notificationChannel,
 				DestinationAddress: relatedContact.Destination,

@@ -23,16 +23,11 @@ var (
 	_ interfaces.AmpqClient = (*ampqMock)(nil)
 )
 
-type debugAmpqClient interface {
-	interfaces.AmpqClient
-	getMessages() []string
-}
-
 type DispatcherServiceTestSuite struct {
 	suite.Suite
 	config     dispatcherConfig
 	dispatcher *Dispatcher
-	ampq       debugAmpqClient
+	ampq       interfaces.AmpqClient
 	inputCh    chan dto.Notification
 	outChan    chan string
 }
@@ -57,10 +52,12 @@ func (suite *DispatcherServiceTestSuite) SetupSuite() {
 
 func (suite *DispatcherServiceTestSuite) Test_dispatch() {
 	personUUID := uuid.New()
+	notificationUUID := uuid.New()
 
 	suite.inputCh <- dto.Notification{
-		Index:     111,
-		EventUUID: uuid.UUID{},
+		Index:            111,
+		NotificationUUID: notificationUUID,
+		EventUUID:        uuid.UUID{},
 		PersonUUIDs: []uuid.UUID{
 			personUUID,
 		},
@@ -69,13 +66,13 @@ func (suite *DispatcherServiceTestSuite) Test_dispatch() {
 	}
 
 	message := <-suite.outChan
-	expected := fmt.Sprintf("queue: message_queue, message: {\"person_uuid\":\"%v\",\"text\":\"test message\",\"channel\":\"sms\",\"destination_address\":\"888\"}", personUUID)
+	expected := fmt.Sprintf("queue: message_queue, message: {\"notification_uuid\":\"%v\",\"person_uuid\":\"%v\",\"text\":\"test message\",\"channel\":\"sms\",\"destination_address\":\"888\"}", notificationUUID, personUUID)
 	assert.Equal(suite.T(), expected, message)
 }
 
 type configMock struct{}
 
-func (c *configMock) GetMessageDispatchQueue() string {
+func (c *configMock) GetNotificationQueue() string {
 	return "message_queue"
 }
 
@@ -124,11 +121,6 @@ func (t *templateMock) FindByEventId(ctx context.Context, eventUUID uuid.UUID) (
 	}, nil
 }
 
-// Для запуска через Go test
-func TestDispatcherServiceTestSuite(t *testing.T) {
-	suite.Run(t, new(DispatcherServiceTestSuite))
-}
-
 type ampqMock struct {
 	outputChan chan string
 }
@@ -168,6 +160,7 @@ func (a *ampqMock) Stop() {
 	return
 }
 
-func (a *ampqMock) getMessages() []string {
-	return nil
+// Для запуска через Go test
+func TestDispatcherServiceTestSuite(t *testing.T) {
+	suite.Run(t, new(DispatcherServiceTestSuite))
 }
