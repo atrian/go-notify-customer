@@ -13,8 +13,9 @@ type Stat struct {
 type StatStatus int64
 
 const (
-	Sent   StatStatus = iota + 1 // Уведомление отправлено
-	Failed                       // Ошибка отправки
+	Sent       StatStatus = iota + 1 // Уведомление отправлено
+	Failed                           // Ошибка отправки
+	BadChannel                       // Канал отправки не поддерживается
 )
 
 func (s StatStatus) String() string {
@@ -23,6 +24,8 @@ func (s StatStatus) String() string {
 		return "sent"
 	case Failed:
 		return "failed"
+	case BadChannel:
+		return "bad channel"
 	}
 	return "unknown"
 }

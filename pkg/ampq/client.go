@@ -19,6 +19,15 @@ func New(dsn string, logger interfaces.Logger) *Client {
 		dsn:    dsn,
 	}
 
+	return &client
+}
+
+func NewWithConnection(dsn string, logger interfaces.Logger) *Client {
+	client := Client{
+		logger: logger,
+		dsn:    dsn,
+	}
+
 	err := client.Connect(dsn)
 	if err != nil {
 		logger.Error("Can't connect AMPQ", err)

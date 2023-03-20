@@ -1,7 +1,9 @@
 package logger
 
 import (
+	"go.uber.org/zap/zapcore"
 	"log"
+	"os"
 
 	"go.uber.org/zap"
 )
@@ -15,6 +17,29 @@ func NewZapLogger() *ZapLogger {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	return &ZapLogger{
+		logger: logger,
+	}
+}
+
+func NewFatalZapLogger() *ZapLogger {
+	errorFatalLevel := zap.LevelEnablerFunc(func(level zapcore.Level) bool {
+		return level == zapcore.FatalLevel
+	})
+
+	// write syncers
+	stderrSyncer := zapcore.Lock(os.Stderr)
+
+	core := zapcore.NewTee(
+		zapcore.NewCore(
+			zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig()),
+			stderrSyncer,
+			errorFatalLevel,
+		),
+	)
+
+	logger := zap.New(core)
 
 	return &ZapLogger{
 		logger: logger,
