@@ -64,7 +64,7 @@ func TestChannelWorker_Start(t *testing.T) {
 		done := make(chan struct{})
 
 		// Создаем нового воркера
-		worker := NewChannelWorker(conf, client, sendStatChan, context.Background(), zapLogger)
+		worker := NewChannelWorker(context.Background(), conf, client, sendStatChan, zapLogger)
 		worker.ReloadService("sms", newSmsMock(outputChan))
 
 		// Run worker
@@ -147,6 +147,38 @@ func isReady(ctx context.Context, c dktest.ContainerInfo) bool {
 
 type configMock struct{}
 
+func (c configMock) GetMailSenderAddress() string {
+	return "test@mail.com"
+}
+
+func (c configMock) GetMailSMTPHost() string {
+	return "localhost:465"
+}
+
+func (c configMock) GetMailLogin() string {
+	return "test@mail.com"
+}
+
+func (c configMock) GetMailPassword() string {
+	return "test@mail.com"
+}
+
+func (c configMock) GetMailMessageTheme() string {
+	return "test@mail.com"
+}
+
+func (c configMock) GetTwilioAccountSid() string {
+	return "test@mail.com"
+}
+
+func (c configMock) GetTwilioAuthToken() string {
+	return "test@mail.com"
+}
+
+func (c configMock) GetTwilioSenderPhone() string {
+	return "test@mail.com"
+}
+
 func (c configMock) GetAmpqDSN() string {
 	return dsn
 }
@@ -157,16 +189,6 @@ func (c configMock) GetNotificationQueue() string {
 
 func (c configMock) GetFailedWorksQueue() string {
 	return "failed"
-}
-
-func (c configMock) GetMailConfig() {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (c configMock) GetTwilioConfig() {
-	//TODO implement me
-	panic("implement me")
 }
 
 type smsServiceMock struct {
