@@ -5,32 +5,46 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/atrian/go-notify-customer/internal/workers/channelServices"
+	"sync"
 	"time"
 
 	"github.com/atrian/go-notify-customer/internal/dto"
 	"github.com/atrian/go-notify-customer/internal/interfaces"
+	"github.com/atrian/go-notify-customer/internal/workers/channelServices"
 )
 
-var _ interfaces.Worker = (*ChannelWorker)(nil)
+var (
+	_ interfaces.Worker = (*ChannelWorker)(nil)
+)
 
 type ChannelWorker struct {
-	services     map[string]channelService
-	config       config
-	client       interfaces.AmpqClient
-	sendStatChan chan<- dto.Stat
 	ctx          context.Context
+	mu           sync.Locker
+	config       config
+	services     map[string]channelService
+	sendStatChan chan<- dto.Stat
+	client       interfaces.AmpqClient
 	logger       interfaces.Logger
 }
 
+// loadServices загрузки стандартных сервисов отправки.
+// Защищено через sync.Locker
 func (c *ChannelWorker) loadServices() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	c.services = map[string]channelService{
-		"sms":  channelServices.NewTwilio(),
-		"mail": channelServices.NewMail(),
+		"sms":  channelServices.NewTwilio(c.ctx, c.config),
+		"mail": channelServices.NewMail(c.ctx, c.config),
 	}
 }
 
+// ReloadService для добавления новых сервисов отправки на лету или для подмены
+// сервисов в тестах на заглушки. Защищено через sync.Locker
 func (c *ChannelWorker) ReloadService(overwrite string, service channelService) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	if c.services == nil {
 		c.services = make(map[string]channelService)
 	}
@@ -40,6 +54,7 @@ func (c *ChannelWorker) ReloadService(overwrite string, service channelService) 
 
 func NewChannelWorker(conf config, client interfaces.AmpqClient, sendStatChan chan<- dto.Stat, ctx context.Context, logger interfaces.Logger) *ChannelWorker {
 	w := ChannelWorker{
+		mu:           &sync.Mutex{},
 		config:       conf,
 		client:       client,
 		sendStatChan: sendStatChan,
@@ -60,10 +75,26 @@ type config interface {
 	GetAmpqDSN() string
 	GetNotificationQueue() string
 	GetFailedWorksQueue() string
-	GetMailConfig()   // TODO
-	GetTwilioConfig() // TODO
+	mailConfig
+	twilioConfig
 }
 
+type mailConfig interface {
+	GetMailSenderAddress() string
+	GetMailSMTPHost() string
+	GetMailLogin() string
+	GetMailPassword() string
+	GetMailMessageTheme() string
+}
+
+type twilioConfig interface {
+	GetTwilioAccountSid() string
+	GetTwilioAuthToken() string
+	GetTwilioSenderPhone() string
+}
+
+// Start потребляет очередь consumeQueue, восстанавливает объект dto.Message из json
+// и отправляет его в ChannelWorker.Send
 func (c *ChannelWorker) Start(consumeQueue string, successQueue string, failQueue string) {
 	c.client.MigrateDurableQueues(consumeQueue)
 

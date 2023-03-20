@@ -7,13 +7,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/atrian/go-notify-customer/internal/dto"
-	"github.com/google/uuid"
 	"testing"
 	"time"
 
+	"github.com/atrian/go-notify-customer/internal/dto"
 	"github.com/dhui/dktest"
 	"github.com/docker/go-connections/nat"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/atrian/go-notify-customer/pkg/ampq"
