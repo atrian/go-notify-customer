@@ -39,7 +39,7 @@ func (s Service) All(ctx context.Context) []dto.Template {
 }
 
 func (s Service) Store(ctx context.Context, template dto.Template) (dto.Template, error) {
-	template.EventUUID = uuid.New()
+	template.TemplateUUID = uuid.New()
 
 	err := s.storage.Store(ctx, template)
 	if err != nil {

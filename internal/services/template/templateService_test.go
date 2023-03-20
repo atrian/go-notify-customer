@@ -60,9 +60,9 @@ func (suite *TemplateTestSuite) TestService_Store() {
 	storeResult, err := suite.service.Store(context.TODO(), newEvent)
 	assert.NoError(suite.T(), err)
 
-	// При сохроанении событию выдается UUID, сбрасываем его для сравнения в тесте
-	storeResult.EventUUID = uuid.UUID{}
-	assert.Equal(suite.T(), storeResult, newEvent)
+	// При сохранении шаблону выдается UUID, сбрасываем его для сравнения в тесте
+	storeResult.TemplateUUID = uuid.UUID{}
+	assert.Equal(suite.T(), newEvent, storeResult)
 }
 
 func (suite *TemplateTestSuite) TestService_StoreBatch() {

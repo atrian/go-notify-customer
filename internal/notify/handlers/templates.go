@@ -5,11 +5,12 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/go-chi/chi/v5"
-	"github.com/google/uuid"
 	"io"
 	"net/http"
 	"strings"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 
 	"github.com/atrian/go-notify-customer/internal/dto"
 	templateErrors "github.com/atrian/go-notify-customer/internal/services/template"
@@ -59,6 +60,44 @@ func (h *Handler) UpdateTemplate() http.HandlerFunc {
 	}
 }
 
+// StoreTemplate сохранение шаблона сообщения POST /api/v1/templates
+//
+//	@Tags Template
+//	@Summary сохранение шаблона сообщения
+//	@Accept  json
+//	@Produce json
+//	@Param metrics body dto.IncomingTemplate true
+//	@Success 200 dto.Template
+//	@Failure 400
+//	@Failure 500
+//	@Router /api/v1/templates [post]
+func (h *Handler) StoreTemplate() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		template, err := h.unmarshallTemplate(r)
+		if err != nil {
+			h.logger.Error("StoreTemplate cant unmarshallTemplate", err)
+			http.Error(w, "Bad JSON", http.StatusBadRequest)
+		}
+
+		result, err := h.services.template.Store(context.Background(), template)
+
+		if err != nil {
+			http.Error(w, "Bad JSON", http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("content-type", h.conf.GetDefaultResponseContentType())
+		w.WriteHeader(http.StatusOK)
+
+		h.logger.Debug("Request OK")
+
+		jsonEncErr := json.NewEncoder(w).Encode(result)
+		if jsonEncErr != nil {
+			h.logger.Error("json.NewEncoder err", jsonEncErr)
+		}
+	}
+}
+
 // DeleteTemplate удаление шаблона сообщения DELETE /api/v1/templates/{UUID-v4}
 //
 //	@Tags Template
@@ -88,7 +127,7 @@ func (h *Handler) DeleteTemplate() http.HandlerFunc {
 				return
 			}
 
-			http.Error(w, "Bad JSON", http.StatusInternalServerError)
+			http.Error(w, "Internal error", http.StatusInternalServerError)
 			return
 		}
 
@@ -96,6 +135,75 @@ func (h *Handler) DeleteTemplate() http.HandlerFunc {
 		w.WriteHeader(http.StatusOK)
 
 		h.logger.Debug("Request OK")
+	}
+}
+
+// GetTemplate Запрос деталей шаблона сообщения GET /api/v1/templates/{UUID-v4}
+//
+//	@Tags Template
+//	@Summary Запрос деталей шаблона сообщения
+//	@Produce json
+//	@Param template_uuid path string true "ID шаблона в формате UUID v4"
+//	@Success 200 dto.Template
+//	@Failure 400
+//	@Failure 404
+//	@Failure 500
+//	@Router /api/v1/templates/{UUID-v4} [get]
+func (h *Handler) GetTemplate() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		param := chi.URLParam(r, "templateUUID")
+
+		templateUUID, err := uuid.Parse(param)
+		if err != nil {
+			h.logger.Error("GetTemplate Parse templateUUID", err)
+			http.Error(w, "Bad templateUUID", http.StatusBadRequest)
+		}
+
+		template, err := h.services.template.FindById(context.Background(), templateUUID)
+
+		if err != nil {
+			if errors.Is(err, templateErrors.NotFound) {
+				http.Error(w, "Not found", http.StatusNotFound)
+				return
+			}
+
+			http.Error(w, "Internal error", http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("content-type", h.conf.GetDefaultResponseContentType())
+		w.WriteHeader(http.StatusOK)
+
+		h.logger.Debug("Request OK")
+
+		jsonEncErr := json.NewEncoder(w).Encode(template)
+		if jsonEncErr != nil {
+			h.logger.Error("json.NewEncoder err", jsonEncErr)
+		}
+	}
+}
+
+// GetTemplates Запрос всех доступных шаблонов GET /api/v1/templates
+//
+//	@Tags Template
+//	@Summary Запрос деталей шаблона сообщения
+//	@Produce json
+//	@Success 200 array dto.Template
+//	@Failure 500
+//	@Router /api/v1/templates [get]
+func (h *Handler) GetTemplates() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		templates := h.services.template.All(context.Background())
+
+		w.Header().Set("content-type", h.conf.GetDefaultResponseContentType())
+		w.WriteHeader(http.StatusOK)
+
+		h.logger.Debug("Request OK")
+
+		jsonEncErr := json.NewEncoder(w).Encode(templates)
+		if jsonEncErr != nil {
+			h.logger.Error("json.NewEncoder err", jsonEncErr)
+		}
 	}
 }
 

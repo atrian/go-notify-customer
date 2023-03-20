@@ -39,12 +39,12 @@ func (r *Router) RegisterRoutes(handler *handlers.Handler) *Router {
 
 			// Сервис шаблонов сообщений
 			r.Route("/templates", func(r chi.Router) {
-				r.Get("/", nil)  // GET /templates
-				r.Post("/", nil) // POST /templates
+				r.Get("/", handler.GetTemplates())   // GET /templates
+				r.Post("/", handler.StoreTemplate()) // POST /templates
 
 				r.Route("/{templateUUID}", func(r chi.Router) {
 					// GET /templates/93ebac94-cf39-4728-9bba-472ac93a4368
-					r.Get("/", nil)
+					r.Get("/", handler.GetTemplate())
 					// PUT /templates/93ebac94-cf39-4728-9bba-472ac93a4368
 					r.Put("/", handler.UpdateTemplate())
 					// DELETE /templates/93ebac94-cf39-4728-9bba-472ac93a4368
