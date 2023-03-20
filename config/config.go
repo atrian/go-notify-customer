@@ -2,12 +2,24 @@ package config
 
 import (
 	"flag"
-	"log"
-
 	"github.com/caarlos0/env/v6"
+
+	"github.com/atrian/go-notify-customer/internal/interfaces"
 )
 
-var _ senderConfig = (*Config)(nil)
+var (
+	_ senderConfig = (*Config)(nil)
+	_ grpcConfig   = (*Config)(nil)
+	_ webConfig    = (*Config)(nil)
+)
+
+type webConfig interface {
+	GetHttpServerAddress() string
+}
+
+type grpcConfig interface {
+	GetGRPCAddress() string
+}
 
 type senderConfig interface {
 	GetAmpqDSN() string
@@ -32,19 +44,40 @@ type twilioConfig interface {
 }
 
 type Config struct {
-	address           string `env:"NC_ADDRESS"`
-	grpcVaultAddress  string `env:"NC_GRPC_VAULT_ADDRESS"`
-	ampqDSN           string `env:"NC_AMPQDSN"`
-	notificationQueue string `env:"NC_DISPATCH_QUEUE"`
-	failedWorksQueue  string `env:"NC_FAILED_QUEUE"`
+	httpAddress             string `env:"NC_HTTP_ADDRESS"`
+	grpcVaultAddress        string `env:"NC_GRPC_VAULT_ADDRESS"`
+	ampqDSN                 string `env:"NC_AMPQDSN"`
+	notificationQueue       string `env:"NC_DISPATCH_QUEUE"`
+	failedWorksQueue        string `env:"NC_FAILED_QUEUE"`
+	mailSenderAddress       string `env:"NC_MAIL_SENDER_ADDRESS"`
+	mailSMTPHost            string `env:"NC_MAIL_SMTP_HOST"`
+	mailLogin               string `env:"NC_MAIL_LOGIN"`
+	mailPassword            string `env:"NC_MAIL_PASSWORD"`
+	mailDefaultMessageTheme string `env:"NC_MAIL_DEFAULT_MESSAGE_THEME"`
+	twilioAccountSid        string `env:"NC_TWILIO_ACCOUNT_ID"`
+	twilioAuthToken         string `env:"NC_TWILIO_ACCOUNT_ID"`
+	twilioSenderPhone       string `env:"NC_TWILIO_SENDER_PHONE"`
+	log                     interfaces.Logger
+}
+
+func NewConfig(logger interfaces.Logger) Config {
+	conf := Config{
+		log: logger,
+	}
+
+	conf.loadDefaults()
+	conf.loadEnv()
+	conf.loadFlags()
+
+	return conf
 }
 
 func (config *Config) GetAmpqDSN() string {
 	return config.ampqDSN
 }
 
-func (config *Config) GetWebServerAddress() string {
-	return config.address
+func (config *Config) GetHttpServerAddress() string {
+	return config.httpAddress
 }
 
 func (config *Config) GetGRPCAddress() string {
@@ -60,69 +93,59 @@ func (config *Config) GetFailedWorksQueue() string {
 }
 
 func (config *Config) GetMailSenderAddress() string {
-	//TODO implement me
-	panic("implement me")
+	return config.mailSenderAddress
 }
 
 func (config *Config) GetMailSMTPHost() string {
-	//TODO implement me
-	panic("implement me")
+	return config.mailSMTPHost
 }
 
 func (config *Config) GetMailLogin() string {
-	//TODO implement me
-	panic("implement me")
+	return config.mailLogin
 }
 
 func (config *Config) GetMailPassword() string {
-	//TODO implement me
-	panic("implement me")
+	return config.mailPassword
 }
 
 func (config *Config) GetMailMessageTheme() string {
-	//TODO implement me
-	panic("implement me")
+	return config.mailDefaultMessageTheme
 }
 
 func (config *Config) GetTwilioAccountSid() string {
-	//TODO implement me
-	panic("implement me")
+	return config.twilioAccountSid
 }
 
 func (config *Config) GetTwilioAuthToken() string {
-	//TODO implement me
-	panic("implement me")
+	return config.twilioAuthToken
 }
 
 func (config *Config) GetTwilioSenderPhone() string {
-	//TODO implement me
-	panic("implement me")
+	return config.twilioSenderPhone
 }
 
-func NewConfig() Config {
-	conf := Config{}
-
-	conf.loadServerEnvConfiguration()
-	conf.loadServerFlags()
-
-	return conf
+func (config *Config) loadDefaults() {
+	config.notificationQueue = "planned_notifications"
+	config.failedWorksQueue = "failed_notifications"
 }
 
-// loadServerFlags загрузка в конфигурацию флагов запуска приложения
-func (config *Config) loadServerFlags() {
-	address := flag.String("a", "127.0.0.1:8080", "Address and port used for GO notify customer app.")
-	ampqDsn := flag.String("ad", "amqp://guest:guest@localhost:5672/", "DSN for AMPQ server")
+// loadFlags загрузка в конфигурацию флагов запуска приложения
+func (config *Config) loadFlags() {
+	httpAddress := flag.String("a", "127.0.0.1:8080", "Address and port used for GO-notify-customer app webserver.")
+	grpcVaultAddress := flag.String("a", "127.0.0.1:50051", "Address and port used GRPC vault connection.")
+	ampqDsn := flag.String("ad", "amqp://guest:guest@localhost:5672/", "DSN for AMPQ server.")
 
 	flag.Parse()
 
-	config.address = *address
+	config.httpAddress = *httpAddress
+	config.grpcVaultAddress = *grpcVaultAddress
 	config.ampqDSN = *ampqDsn
 }
 
-// loadServerFlags загрузка в конфигурацию данных из переменных окружения
-func (config *Config) loadServerEnvConfiguration() {
-	err := env.Parse(&config.notificationQueue)
+// loadEnv загрузка в конфигурацию данных из переменных окружения
+func (config *Config) loadEnv() {
+	err := env.Parse(&config)
 	if err != nil {
-		log.Fatal("TODO - доработать конфиги")
+		config.log.Error("Config parse error", err)
 	}
 }

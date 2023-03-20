@@ -20,7 +20,7 @@ import (
 
 type App struct {
 	services services
-	config   config.Config
+	config   interface{ GetHttpServerAddress() string }
 	logger   interfaces.Logger
 }
 
@@ -34,10 +34,11 @@ type services struct {
 }
 
 func New(ctx context.Context) App {
-	// общий конфиг приложения
-	appConf := config.NewConfig()
 	// логгер приложения
 	appLogger := logger.NewZapLogger()
+
+	// общий конфиг приложения
+	appConf := config.NewConfig(appLogger)
 
 	// канал для передачи уведомлений
 	notificationChan := make(chan dto.Notification)
@@ -57,7 +58,7 @@ func New(ctx context.Context) App {
 	dispatcherService := notificationDispatcher.New(ctx, notificationChan, &appConf, serviceFacade, ampqClient, appLogger)
 
 	return App{
-		config: appConf,
+		config: &appConf,
 		services: services{
 			notificationService:    notificationService,
 			notificationDispatcher: dispatcherService,
@@ -90,12 +91,12 @@ func (a App) Run() {
 	a.services.templateService,
 	a.logger))*/
 
-	startMessage := fmt.Sprintf("Server started @ %v", a.config.GetWebServerAddress())
+	startMessage := fmt.Sprintf("Server started @ %v", a.config.GetHttpServerAddress())
 	a.logger.Info(startMessage)
 
 	// запуск веб сервера, по умолчанию с адресом localhost, порт 8080
 	// TODO прокинуть роутер в http сервер
-	log.Fatal(http.ListenAndServe(a.config.GetWebServerAddress(), nil))
+	log.Fatal(http.ListenAndServe(a.config.GetHttpServerAddress(), nil))
 }
 
 func (a App) Stop() {
