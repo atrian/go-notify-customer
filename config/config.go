@@ -8,13 +8,18 @@ import (
 )
 
 var (
-	_ senderConfig = (*Config)(nil)
-	_ grpcConfig   = (*Config)(nil)
-	_ webConfig    = (*Config)(nil)
+	_ senderConfig   = (*Config)(nil)
+	_ grpcConfig     = (*Config)(nil)
+	_ webConfig      = (*Config)(nil)
+	_ securityConfig = (*Config)(nil)
 )
 
 type webConfig interface {
 	GetHttpServerAddress() string
+}
+
+type securityConfig interface {
+	GetTrustedSubnetAddress() string
 }
 
 type grpcConfig interface {
@@ -45,6 +50,7 @@ type twilioConfig interface {
 
 type Config struct {
 	httpAddress             string `env:"NC_HTTP_ADDRESS"`
+	httpTrustedSubnet       string `env:"NC_TRUSTED_SUBNET"`
 	grpcVaultAddress        string `env:"NC_GRPC_VAULT_ADDRESS"`
 	ampqDSN                 string `env:"NC_AMPQDSN"`
 	notificationQueue       string `env:"NC_DISPATCH_QUEUE"`
@@ -58,6 +64,10 @@ type Config struct {
 	twilioAuthToken         string `env:"NC_TWILIO_ACCOUNT_ID"`
 	twilioSenderPhone       string `env:"NC_TWILIO_SENDER_PHONE"`
 	log                     interfaces.Logger
+}
+
+func (config *Config) GetTrustedSubnetAddress() string {
+	return config.httpTrustedSubnet
 }
 
 func NewConfig(logger interfaces.Logger) Config {
