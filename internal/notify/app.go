@@ -3,6 +3,7 @@ package notify
 import (
 	"context"
 	"fmt"
+	"github.com/atrian/go-notify-customer/internal/workers"
 	"log"
 	"net/http"
 
@@ -19,9 +20,12 @@ import (
 )
 
 type App struct {
-	services services
-	config   interface{ GetHttpServerAddress() string }
-	logger   interfaces.Logger
+	ctx              context.Context
+	services         services
+	config           config.Config
+	notificationChan chan dto.Notification
+	statChan         chan dto.Stat
+	logger           interfaces.Logger
 }
 
 // services - регистр всех доступных сервисов
@@ -58,7 +62,8 @@ func New(ctx context.Context) App {
 	dispatcherService := notificationDispatcher.New(ctx, notificationChan, &appConf, serviceFacade, ampqClient, appLogger)
 
 	return App{
-		config: &appConf,
+		ctx:    ctx,
+		config: appConf,
 		services: services{
 			notificationService:    notificationService,
 			notificationDispatcher: dispatcherService,
@@ -66,7 +71,9 @@ func New(ctx context.Context) App {
 			templateService:        templateService,
 			statisticService:       statisticService,
 		},
-		logger: appLogger,
+		notificationChan: notificationChan,
+		statChan:         statChan,
+		logger:           appLogger,
 	}
 }
 
@@ -105,7 +112,16 @@ func (a App) Stop() {
 }
 
 func (a App) StartWorkers() {
-	var channelWorker interfaces.Worker
-	_ = channelWorker
-	// конфигурация и запуск воркеров отправки конкретных каналов
+	var (
+		ampqClient    interfaces.AmpqClient
+		channelWorker interfaces.Worker
+	)
+
+	ampqClient = ampq.NewWithConnection(a.config.GetAmpqDSN(), logger.NewZapLogger())
+	channelWorker = workers.NewChannelWorker(a.ctx, &a.config, ampqClient, a.statChan, a.logger)
+
+	go func() {
+		channelWorker.Start(a.config.GetNotificationQueue(), "", a.config.GetFailedWorksQueue())
+		defer channelWorker.Stop()
+	}()
 }

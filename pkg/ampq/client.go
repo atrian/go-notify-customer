@@ -80,6 +80,10 @@ func (c *Client) Channel() *amqp.Channel {
 // MigrateDurableQueues создает Durable очереди в RabbitMQ
 func (c *Client) MigrateDurableQueues(queues ...string) {
 	for _, queue := range queues {
+		if queue == "" {
+			continue
+		}
+
 		_, err := c.Channel().QueueDeclare(queue, true, false, false, false, nil)
 		if err != nil {
 			c.logger.Error("Can't declare queue", err)

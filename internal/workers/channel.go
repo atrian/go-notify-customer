@@ -52,7 +52,7 @@ func (c *ChannelWorker) ReloadService(overwrite string, service channelService) 
 	c.services[overwrite] = service
 }
 
-func NewChannelWorker(conf config, client interfaces.AmpqClient, sendStatChan chan<- dto.Stat, ctx context.Context, logger interfaces.Logger) *ChannelWorker {
+func NewChannelWorker(ctx context.Context, conf config, client interfaces.AmpqClient, sendStatChan chan<- dto.Stat, logger interfaces.Logger) *ChannelWorker {
 	w := ChannelWorker{
 		mu:           &sync.Mutex{},
 		config:       conf,
@@ -96,7 +96,7 @@ type twilioConfig interface {
 // Start потребляет очередь consumeQueue, восстанавливает объект dto.Message из json
 // и отправляет его в ChannelWorker.Send
 func (c *ChannelWorker) Start(consumeQueue string, successQueue string, failQueue string) {
-	c.client.MigrateDurableQueues(consumeQueue)
+	c.client.MigrateDurableQueues(consumeQueue, successQueue, failQueue)
 
 	msgs, err := c.client.Consume(consumeQueue)
 	if err != nil {

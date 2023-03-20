@@ -132,7 +132,7 @@ func (config *Config) loadDefaults() {
 // loadFlags загрузка в конфигурацию флагов запуска приложения
 func (config *Config) loadFlags() {
 	httpAddress := flag.String("a", "127.0.0.1:8080", "Address and port used for GO-notify-customer app webserver.")
-	grpcVaultAddress := flag.String("a", "127.0.0.1:50051", "Address and port used GRPC vault connection.")
+	grpcVaultAddress := flag.String("g", "127.0.0.1:50051", "Address and port used GRPC vault connection.")
 	ampqDsn := flag.String("ad", "amqp://guest:guest@localhost:5672/", "DSN for AMPQ server.")
 
 	flag.Parse()
@@ -144,7 +144,7 @@ func (config *Config) loadFlags() {
 
 // loadEnv загрузка в конфигурацию данных из переменных окружения
 func (config *Config) loadEnv() {
-	err := env.Parse(&config)
+	err := env.Parse(config)
 	if err != nil {
 		config.log.Error("Config parse error", err)
 	}
