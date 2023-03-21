@@ -54,6 +54,10 @@ func (s Service) All(ctx context.Context) []dto.Stat {
 		// TODO handle err
 	}
 
+	if res == nil {
+		return []dto.Stat{}
+	}
+
 	return res
 }
 

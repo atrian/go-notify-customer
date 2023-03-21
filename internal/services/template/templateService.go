@@ -35,6 +35,10 @@ func (s Service) All(ctx context.Context) []dto.Template {
 		// TODO log err
 	}
 
+	if templates == nil {
+		return []dto.Template{}
+	}
+
 	return templates
 }
 

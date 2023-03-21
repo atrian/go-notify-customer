@@ -35,6 +35,10 @@ func (e Service) All(ctx context.Context) []dto.Event {
 		// TODO log err
 	}
 
+	if events == nil {
+		return []dto.Event{}
+	}
+
 	return events
 }
 

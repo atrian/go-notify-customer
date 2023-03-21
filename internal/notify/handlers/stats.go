@@ -46,7 +46,7 @@ func (h *Handler) GetStats() http.HandlerFunc {
 //	@Failure 400
 //	@Failure 404
 //	@Failure 500
-//	@Router /api/v1/stats/person/{UUID-v4} [get]
+//	@Router /api/v1/stats/person/{person_uuid} [get]
 func (h *Handler) GetStatByPersonUUID() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		param := chi.URLParam(r, "personUUID")
@@ -55,6 +55,7 @@ func (h *Handler) GetStatByPersonUUID() http.HandlerFunc {
 		if err != nil {
 			h.logger.Error("GetStatByPersonUUID Parse personUUID err", err)
 			http.Error(w, "Bad personUUID", http.StatusBadRequest)
+			return
 		}
 
 		stats, err := h.services.stat.FindByPersonUUID(context.Background(), personUUID)
@@ -91,7 +92,7 @@ func (h *Handler) GetStatByPersonUUID() http.HandlerFunc {
 //	@Failure 400
 //	@Failure 404
 //	@Failure 500
-//	@Router /api/v1/stats/notification/{UUID-v4} [get]
+//	@Router /api/v1/stats/notification/{notification_uuid} [get]
 func (h *Handler) GetStatByNotificationId() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		param := chi.URLParam(r, "notificationUUID")
@@ -100,6 +101,7 @@ func (h *Handler) GetStatByNotificationId() http.HandlerFunc {
 		if err != nil {
 			h.logger.Error("GetStatByNotificationId Parse notificationUUID err", err)
 			http.Error(w, "Bad personUUID", http.StatusBadRequest)
+			return
 		}
 
 		stats, err := h.services.stat.FindByNotificationId(context.Background(), notificationUUID)

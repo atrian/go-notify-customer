@@ -13,6 +13,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
 
+	"github.com/atrian/go-notify-customer/pkg/logger"
 	pb "github.com/atrian/go-notify-customer/proto"
 )
 
@@ -28,7 +29,7 @@ func (suite *ServerTestSuite) SetupSuite() {
 	suite.listener = bufconn.Listen(bufSize)
 
 	s := grpc.NewServer()
-	pb.RegisterVaultServer(s, &ContactServer{})
+	pb.RegisterVaultServer(s, NewContactServer(logger.NewZapLogger()))
 
 	go func() {
 		if err := s.Serve(suite.listener); err != nil {
@@ -41,7 +42,9 @@ func (suite *ServerTestSuite) Test_GetContacts() {
 	ctx := context.Background()
 	personUUID := uuid.New()
 
-	conn, err := grpc.DialContext(ctx, "bufnet", grpc.WithContextDialer(suite.buffDialer), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.DialContext(ctx, "bufnet",
+		grpc.WithContextDialer(suite.buffDialer),
+		grpc.WithTransportCredentials(insecure.NewCredentials()))
 	defer conn.Close()
 
 	assert.NoError(suite.T(), err)

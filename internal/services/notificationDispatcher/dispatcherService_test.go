@@ -72,6 +72,10 @@ func (suite *DispatcherServiceTestSuite) Test_dispatch() {
 
 type configMock struct{}
 
+func (c *configMock) GetAmpqDSN() string {
+	return ""
+}
+
 func (c *configMock) GetNotificationQueue() string {
 	return "message_queue"
 }

@@ -66,6 +66,10 @@ type Config struct {
 	log                     interfaces.Logger
 }
 
+func (config *Config) GetDefaultResponseContentType() string {
+	return "application/json"
+}
+
 func (config *Config) GetTrustedSubnetAddress() string {
 	return config.httpTrustedSubnet
 }

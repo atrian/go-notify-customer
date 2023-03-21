@@ -3,6 +3,8 @@ package notify
 import (
 	"context"
 	"fmt"
+	"github.com/atrian/go-notify-customer/internal/notify/handlers"
+	"github.com/atrian/go-notify-customer/internal/notify/router"
 	"github.com/atrian/go-notify-customer/internal/workers"
 	"log"
 	"net/http"
@@ -83,6 +85,7 @@ func (a App) Run() {
 	defer a.Stop()
 
 	// Предварительная готовность сервисов
+	a.services.notificationDispatcher.Start()
 	a.services.notificationService.Start()
 	a.services.eventService.Start()
 	a.services.templateService.Start()
@@ -93,17 +96,22 @@ func (a App) Run() {
 
 	// подготовка роутера для http сервера, передаем хендлерам сервисы
 	// и логгер
-	/*routes := router.New(handlers.New(
-	a.services.eventService,
-	a.services.templateService,
-	a.logger))*/
+	h := handlers.New(
+		&a.config,
+		a.services.eventService,
+		a.services.notificationService,
+		a.services.statisticService,
+		a.services.templateService,
+		a.logger)
+
+	routes := router.New(h, &a.config)
 
 	startMessage := fmt.Sprintf("Server started @ %v", a.config.GetHttpServerAddress())
 	a.logger.Info(startMessage)
 
 	// запуск веб сервера, по умолчанию с адресом localhost, порт 8080
 	// TODO прокинуть роутер в http сервер
-	log.Fatal(http.ListenAndServe(a.config.GetHttpServerAddress(), nil))
+	log.Fatal(http.ListenAndServe(a.config.GetHttpServerAddress(), routes))
 }
 
 func (a App) Stop() {

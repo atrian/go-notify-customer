@@ -14,15 +14,21 @@ import (
 
 type App struct {
 	ctx      context.Context
-	logger   interfaces.Logger
+	conf     grpcConfig
 	listener net.Listener
+	logger   interfaces.Logger
 }
 
-func New(ctx context.Context) *App {
+type grpcConfig interface {
+	GetGRPCAddress() string
+}
+
+func New(ctx context.Context, conf grpcConfig) *App {
 	l := logger.NewZapLogger()
 
 	a := App{
 		ctx:    ctx,
+		conf:   conf,
 		logger: l,
 	}
 
@@ -38,7 +44,7 @@ func (a *App) Run() {
 	s := grpc.NewServer()
 
 	// регистрируем сервис
-	pb.RegisterVaultServer(s, &ContactServer{})
+	pb.RegisterVaultServer(s, NewContactServer(a.logger))
 
 	a.logger.Info("Vault gRPC server started")
 
@@ -55,7 +61,7 @@ func (a *App) SetCustomListener(listener net.Listener) *App {
 
 func (a *App) SetDefaultListener() *App {
 	// определяем порт для сервера
-	l, err := net.Listen("tcp", ":3200")
+	l, err := net.Listen("tcp", a.conf.GetGRPCAddress())
 	if err != nil {
 		a.logger.Fatal("net.Listen error", err)
 	}

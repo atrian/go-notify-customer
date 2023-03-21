@@ -21,21 +21,40 @@ import (
 //	@Summary обновление шаблона сообщения
 //	@Accept  json
 //	@Produce json
-//	@Param metrics body dto.Template true
-//	@Success 200 dto.Template
+//	@Param templates_uuid path string true "ID шаблона сообщения в формате UUID v4"
+//	@Param template body dto.IncomingTemplate true "Принимает dto шаблона сообщения, возвращает JSON с обновленными данными"
+//	@Success 200 {object} dto.Template
 //	@Failure 400
 //	@Failure 404
 //	@Failure 500
-//	@Router /api/v1/templates/{UUID-v4} [put]
+//	@Router /api/v1/templates/{templates_uuid} [put]
 func (h *Handler) UpdateTemplate() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		template, err := h.unmarshallTemplate(r)
+		param := chi.URLParam(r, "templateUUID")
+		templateUUID, err := uuid.Parse(param)
+		if err != nil {
+			h.logger.Error("UpdateTemplate cant Parse UUID", err)
+			http.Error(w, "Bad template UUID", http.StatusBadRequest)
+			return
+		}
+
+		template, err := h.unmarshallIncomingTemplate(r)
 		if err != nil {
 			h.logger.Error("UpdateTemplate cant unmarshallTemplate", err)
 			http.Error(w, "Bad JSON", http.StatusBadRequest)
+			return
 		}
 
-		result, err := h.services.template.Update(context.Background(), template)
+		updateTemplate := dto.Template{
+			TemplateUUID: templateUUID,
+			EventUUID:    template.EventUUID,
+			Title:        template.Title,
+			Description:  template.Description,
+			Body:         template.Body,
+			ChannelType:  template.ChannelType,
+		}
+
+		result, err := h.services.template.Update(context.Background(), updateTemplate)
 
 		if err != nil {
 			if errors.Is(err, templateErrors.NotFound) {
@@ -65,20 +84,29 @@ func (h *Handler) UpdateTemplate() http.HandlerFunc {
 //	@Summary сохранение шаблона сообщения
 //	@Accept  json
 //	@Produce json
-//	@Param metrics body dto.IncomingTemplate true
-//	@Success 200 dto.Template
+//	@Param template body dto.IncomingTemplate true "Принимает dto нового шаблона сообщения, возвращает JSON сохраненными данными и идентификатором"
+//	@Success 200 {object} dto.Template
 //	@Failure 400
 //	@Failure 500
 //	@Router /api/v1/templates [post]
 func (h *Handler) StoreTemplate() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		template, err := h.unmarshallTemplate(r)
+		template, err := h.unmarshallIncomingTemplate(r)
 		if err != nil {
 			h.logger.Error("StoreTemplate cant unmarshallTemplate", err)
 			http.Error(w, "Bad JSON", http.StatusBadRequest)
+			return
 		}
 
-		result, err := h.services.template.Store(context.Background(), template)
+		storeTemplate := dto.Template{
+			EventUUID:   template.EventUUID,
+			Title:       template.Title,
+			Description: template.Description,
+			Body:        template.Body,
+			ChannelType: template.ChannelType,
+		}
+
+		result, err := h.services.template.Store(context.Background(), storeTemplate)
 
 		if err != nil {
 			http.Error(w, "Bad JSON", http.StatusInternalServerError)
@@ -107,7 +135,7 @@ func (h *Handler) StoreTemplate() http.HandlerFunc {
 //	@Failure 400
 //	@Failure 404
 //	@Failure 500
-//	@Router /api/v1/templates/{UUID-v4} [delete]
+//	@Router /api/v1/templates/{template_uuid} [delete]
 func (h *Handler) DeleteTemplate() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		param := chi.URLParam(r, "templateUUID")
@@ -116,6 +144,7 @@ func (h *Handler) DeleteTemplate() http.HandlerFunc {
 		if err != nil {
 			h.logger.Error("DeleteTemplate Parse templateUUID", err)
 			http.Error(w, "Bad templateUUID", http.StatusBadRequest)
+			return
 		}
 
 		err = h.services.template.DeleteById(context.Background(), templateUUID)
@@ -143,11 +172,11 @@ func (h *Handler) DeleteTemplate() http.HandlerFunc {
 //	@Summary Запрос деталей шаблона сообщения
 //	@Produce json
 //	@Param template_uuid path string true "ID шаблона в формате UUID v4"
-//	@Success 200 dto.Template
+//	@Success 200 {object} dto.Template
 //	@Failure 400
 //	@Failure 404
 //	@Failure 500
-//	@Router /api/v1/templates/{UUID-v4} [get]
+//	@Router /api/v1/templates/{template_uuid} [get]
 func (h *Handler) GetTemplate() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		param := chi.URLParam(r, "templateUUID")
@@ -156,6 +185,7 @@ func (h *Handler) GetTemplate() http.HandlerFunc {
 		if err != nil {
 			h.logger.Error("GetTemplate Parse templateUUID", err)
 			http.Error(w, "Bad templateUUID", http.StatusBadRequest)
+			return
 		}
 
 		template, err := h.services.template.FindById(context.Background(), templateUUID)
@@ -229,6 +259,34 @@ func (h *Handler) unmarshallTemplate(r *http.Request) (dto.Template, error) {
 	err := decoder.Decode(&template)
 	if err != nil {
 		return dto.Template{}, err
+	}
+
+	return template, nil
+}
+
+// unmarshallIncomingTemplate анмаршаллинг шаблона нового сообщения
+func (h *Handler) unmarshallIncomingTemplate(r *http.Request) (dto.IncomingTemplate, error) {
+	var body io.Reader
+
+	// если в заголовках установлен Content-Encoding gzip, распаковываем тело
+	if strings.Contains(r.Header.Get("Content-Encoding"), "gzip") {
+		body = h.decodeGzipBody(r.Body)
+	} else {
+		body = r.Body
+	}
+
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			h.logger.Error("Body io.ReadCloser error", err)
+		}
+	}(r.Body)
+
+	var template dto.IncomingTemplate
+	decoder := json.NewDecoder(body)
+	err := decoder.Decode(&template)
+	if err != nil {
+		return dto.IncomingTemplate{}, err
 	}
 
 	return template, nil

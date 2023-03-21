@@ -15,11 +15,19 @@ import (
 	pb "github.com/atrian/go-notify-customer/proto"
 )
 
+var _ grpcConfig = (*mockConfig)(nil)
+
 type VaultTestSuite struct {
 	suite.Suite
 	contacts []*pb.Contact
 	app      *App
 	port     int
+}
+
+type mockConfig struct{}
+
+func (m mockConfig) GetGRPCAddress() string {
+	return "127.0.0.1:50051"
 }
 
 func (suite *VaultTestSuite) SetupSuite() {
@@ -30,7 +38,7 @@ func (suite *VaultTestSuite) SetupSuite() {
 
 	ctx := context.Background()
 
-	suite.app = New(ctx)
+	suite.app = New(ctx, mockConfig{})
 	go suite.app.SetCustomListener(listener).Run()
 }
 

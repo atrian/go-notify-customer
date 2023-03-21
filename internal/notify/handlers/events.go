@@ -22,21 +22,40 @@ import (
 //	@Accept  json
 //	@Produce json
 //	@Param event_uuid path string true "ID бизнес события в формате UUID v4"
-//	@Param metrics body dto.Event true
-//	@Success 200 dto.Event
+//	@Param event body dto.IncomingEvent true "Test"
+//	@Success 200 {object} dto.Event
 //	@Failure 400
 //	@Failure 404
 //	@Failure 500
-//	@Router /api/v1/events/{UUID-v4} [put]
+//	@Router /api/v1/events/{event_uuid} [put]
 func (h *Handler) UpdateEvent() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		event, err := h.unmarshallEvent(r)
+		param := chi.URLParam(r, "eventUUID")
+
+		event, err := h.unmarshallIncomingEvent(r)
+
 		if err != nil {
 			h.logger.Error("UpdateEvent cant unmarshallEvent", err)
 			http.Error(w, "Bad JSON", http.StatusBadRequest)
+			return
 		}
 
-		result, err := h.services.event.Update(context.Background(), event)
+		eventUUID, err := uuid.Parse(param)
+		if err != nil {
+			h.logger.Error("UpdateEvent cant Parse UUID", err)
+			http.Error(w, "Bad UUID", http.StatusBadRequest)
+			return
+		}
+
+		eventForUpdate := dto.Event{
+			EventUUID:            eventUUID,
+			Title:                event.Title,
+			Description:          event.Description,
+			DefaultPriority:      event.DefaultPriority,
+			NotificationChannels: event.NotificationChannels,
+		}
+
+		result, err := h.services.event.Update(context.Background(), eventForUpdate)
 
 		if err != nil {
 			if errors.Is(err, eventErrors.NotFound) {
@@ -66,8 +85,8 @@ func (h *Handler) UpdateEvent() http.HandlerFunc {
 //	@Summary сохранение бизнес события
 //	@Accept  json
 //	@Produce json
-//	@Param metrics body dto.IncomingEvent true
-//	@Success 200 dto.Event
+//	@Param event body dto.IncomingEvent true "Принимает dto события, отдает сохраненное событие с идентификатором"
+//	@Success 200 {object} dto.Event
 //	@Failure 400
 //	@Failure 500
 //	@Router /api/v1/events [post]
@@ -77,6 +96,7 @@ func (h *Handler) StoreEvent() http.HandlerFunc {
 		if err != nil {
 			h.logger.Error("StoreEvent cant unmarshallEvent", err)
 			http.Error(w, "Bad JSON", http.StatusBadRequest)
+			return
 		}
 
 		result, err := h.services.event.Store(context.Background(), event)
@@ -108,7 +128,7 @@ func (h *Handler) StoreEvent() http.HandlerFunc {
 //	@Failure 400
 //	@Failure 404
 //	@Failure 500
-//	@Router /api/v1/events/{UUID-v4} [delete]
+//	@Router /api/v1/events/{event_uuid} [delete]
 func (h *Handler) DeleteEvent() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		param := chi.URLParam(r, "eventUUID")
@@ -117,6 +137,7 @@ func (h *Handler) DeleteEvent() http.HandlerFunc {
 		if err != nil {
 			h.logger.Error("DeleteEvent Parse eventUUID", err)
 			http.Error(w, "Bad eventUUID", http.StatusBadRequest)
+			return
 		}
 
 		err = h.services.event.DeleteById(context.Background(), eventUUID)
@@ -144,11 +165,11 @@ func (h *Handler) DeleteEvent() http.HandlerFunc {
 //	@Summary Запрос деталей бизнес события
 //	@Produce json
 //	@Param event_uuid path string true "ID события в формате UUID v4"
-//	@Success 200 dto.Event
+//	@Success 200 {object} dto.Event
 //	@Failure 400
 //	@Failure 404
 //	@Failure 500
-//	@Router /api/v1/events/{UUID-v4} [get]
+//	@Router /api/v1/events/{event_uuid} [get]
 func (h *Handler) GetEvent() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		param := chi.URLParam(r, "eventUUID")
@@ -157,6 +178,7 @@ func (h *Handler) GetEvent() http.HandlerFunc {
 		if err != nil {
 			h.logger.Error("GetEvent Parse eventUUID", err)
 			http.Error(w, "Bad eventUUID", http.StatusBadRequest)
+			return
 		}
 
 		event, err := h.services.event.FindById(context.Background(), eventUUID)
@@ -186,7 +208,7 @@ func (h *Handler) GetEvent() http.HandlerFunc {
 // GetEvents Запрос всех доступных шаблонов GET /api/v1/events
 //
 //	@Tags Event
-//	@Summary Запрос деталей шаблона сообщения
+//	@Summary Запрос всех доступных шаблонов
 //	@Produce json
 //	@Success 200 array dto.Event
 //	@Failure 500
@@ -230,6 +252,34 @@ func (h *Handler) unmarshallEvent(r *http.Request) (dto.Event, error) {
 	err := decoder.Decode(&event)
 	if err != nil {
 		return dto.Event{}, err
+	}
+
+	return event, nil
+}
+
+// unmarshallEvent анмаршаллинг бизнес события
+func (h *Handler) unmarshallIncomingEvent(r *http.Request) (dto.IncomingEvent, error) {
+	var body io.Reader
+
+	// если в заголовках установлен Content-Encoding gzip, распаковываем тело
+	if strings.Contains(r.Header.Get("Content-Encoding"), "gzip") {
+		body = h.decodeGzipBody(r.Body)
+	} else {
+		body = r.Body
+	}
+
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			h.logger.Error("Body io.ReadCloser error", err)
+		}
+	}(r.Body)
+
+	var event dto.IncomingEvent
+	decoder := json.NewDecoder(body)
+	err := decoder.Decode(&event)
+	if err != nil {
+		return dto.IncomingEvent{}, err
 	}
 
 	return event, nil

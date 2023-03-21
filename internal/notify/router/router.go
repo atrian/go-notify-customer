@@ -3,7 +3,9 @@ package router
 import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	httpSwagger "github.com/swaggo/http-swagger"
 
+	_ "github.com/atrian/go-notify-customer/docs"
 	"github.com/atrian/go-notify-customer/internal/notify/handlers"
 	customMiddleware "github.com/atrian/go-notify-customer/internal/notify/middleware"
 )
@@ -34,6 +36,10 @@ func (r *Router) RegisterRoutes(handler *handlers.Handler) *Router {
 
 	r.Group(func(r chi.Router) {
 		r.Use(trustedMW)
+		// Swagger
+		r.Get("/swagger/*", httpSwagger.Handler(
+			httpSwagger.URL("http://localhost:8080/swagger/doc.json"), //The url pointing to API definition
+		))
 
 		r.Route("/api/v1", func(r chi.Router) {
 
@@ -80,8 +86,8 @@ func (r *Router) RegisterRoutes(handler *handlers.Handler) *Router {
 			// Сервис уведомлений
 			r.Route("/notifications", func(r chi.Router) {
 				r.Post("/", handler.ProcessNotifications())
+				r.Get("/seed", handler.SeedDemoData())
 			})
-
 		})
 	})
 

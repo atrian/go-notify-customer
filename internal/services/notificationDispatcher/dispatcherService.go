@@ -20,6 +20,7 @@ type serviceGateway interface {
 }
 
 type dispatcherConfig interface {
+	GetAmpqDSN() string
 	GetNotificationQueue() string
 }
 
@@ -55,6 +56,10 @@ func New(
 // Start стартовые операции для notificationDispatcher - ampq миграция,
 // запуск прослушивания канала
 func (d Dispatcher) Start() {
+	err := d.ampqClient.Connect(d.config.GetAmpqDSN())
+	if err != nil {
+		d.logger.Error("Dispatcher ampqClient.Connect err", err)
+	}
 	// миграция AMPQ очередей
 	d.ampqClient.MigrateDurableQueues(d.config.GetNotificationQueue())
 
@@ -91,6 +96,11 @@ func (d Dispatcher) listenInputChannel(ctx context.Context, input <-chan dto.Not
 	for {
 		select {
 		case notification := <-input:
+			// выдаем UUID уведомлению
+			notification.NotificationUUID = uuid.New()
+
+			d.logger.Debug(fmt.Sprintf("Notification received: %v", notification))
+
 			messages := d.buildMessages(notification)
 
 			for i := 0; i < len(messages); i++ {
@@ -116,19 +126,19 @@ func (d Dispatcher) buildMessages(notification dto.Notification) []dto.Message {
 	// запрос контактов
 	contacts, err := d.services.getContacts(d.ctx, notification.PersonUUIDs)
 	if err != nil {
-		// TODO err handle
+		d.logger.Error("Dispatcher getContacts err", err)
 	}
 
 	// запрос бизнес события
 	event, err := d.services.getEvent(d.ctx, notification.EventUUID)
 	if err != nil {
-		// TODO err handle
+		d.logger.Error("Dispatcher getEvent err", err)
 	}
 
 	// запрос шаблона для события
 	templates, err := d.services.getTemplates(d.ctx, notification.EventUUID)
 	if err != nil {
-		// TODO err handle
+		d.logger.Error("Dispatcher getTemplates err", err)
 	}
 
 	// Формируем доступные шаблоны - делаем подстановки параметров в текст
@@ -153,11 +163,15 @@ func (d Dispatcher) buildMessages(notification dto.Notification) []dto.Message {
 		// Для каждого пользователя берем нужный контакт
 		for _, contact := range contacts {
 			// выбор контакта для канала
+			// TODO REMOVE PD!
+			d.logger.Debug("Start contact locator for:", notificationChannel, fmt.Sprintf("%#v", contact))
 			relatedContact, cErr := contactLocator(notificationChannel, contact)
 			if cErr != nil {
-				// TODO не нашли контакт человека для этого канала, пишем лог
+				d.logger.Error("Dispatcher contactLocator err", cErr)
 				continue
 			}
+
+			d.logger.Debug("Message prepared")
 
 			// и добавляем сообщение в слайс на отправку
 			messages = append(messages, dto.Message{
