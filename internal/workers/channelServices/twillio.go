@@ -3,12 +3,15 @@ package channelServices
 import (
 	"context"
 	external "github.com/nikoksr/notify"
+
+	"github.com/atrian/go-notify-customer/internal/interfaces"
 	"github.com/nikoksr/notify/service/twilio"
 )
 
 type Twilio struct {
-	ctx context.Context
-	cfg configTwilio
+	ctx    context.Context
+	cfg    configTwilio
+	logger interfaces.Logger
 }
 
 type configTwilio interface {
@@ -17,10 +20,11 @@ type configTwilio interface {
 	GetTwilioSenderPhone() string
 }
 
-func NewTwilio(ctx context.Context, cfg configTwilio) *Twilio {
+func NewTwilio(ctx context.Context, cfg configTwilio, logger interfaces.Logger) *Twilio {
 	return &Twilio{
-		ctx: ctx,
-		cfg: cfg,
+		ctx:    ctx,
+		cfg:    cfg,
+		logger: logger,
 	}
 }
 

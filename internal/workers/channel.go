@@ -34,8 +34,8 @@ func (c *ChannelWorker) loadServices() {
 	defer c.mu.Unlock()
 
 	c.services = map[string]channelService{
-		"sms":  channelServices.NewTwilio(c.ctx, c.config),
-		"mail": channelServices.NewMail(c.ctx, c.config),
+		"sms":  channelServices.NewTwilio(c.ctx, c.config, c.logger),
+		"mail": channelServices.NewMail(c.ctx, c.config, c.logger),
 	}
 }
 
@@ -85,6 +85,7 @@ type mailConfig interface {
 	GetMailLogin() string
 	GetMailPassword() string
 	GetMailMessageTheme() string
+	IsMailTLSRequired() bool
 }
 
 type twilioConfig interface {
@@ -129,6 +130,7 @@ func (c *ChannelWorker) Send(message dto.Message) {
 	if !exist {
 		c.logger.Error(fmt.Sprintf("Bad channel: %v for notificationUUID:%v", message.Channel, message.NotificationUUID), errors.New("not exist"))
 		c.sendStat(message, dto.BadChannel)
+		c.storeFailedJobs(message)
 		return
 	}
 
@@ -137,11 +139,25 @@ func (c *ChannelWorker) Send(message dto.Message) {
 	if err != nil {
 		c.logger.Error(fmt.Sprintf("External sender error for notificationUUID:%v", message.NotificationUUID), err)
 		c.sendStat(message, dto.Failed)
+		c.storeFailedJobs(message)
 		return
 	}
 
 	c.logger.Info(fmt.Sprintf("Notification SENT notificationUUID:%v", message.NotificationUUID))
 	c.sendStat(message, dto.Sent)
+}
+
+func (c *ChannelWorker) storeFailedJobs(message dto.Message) {
+	jsonMessage, err := json.Marshal(message)
+	if err != nil {
+		c.logger.Error("storeFailedJobs Message JSON marshal failed", err)
+		return
+	}
+
+	err = c.client.Publish(c.config.GetFailedWorksQueue(), jsonMessage)
+	if err != nil {
+		c.logger.Error("storeFailedJobs client.Publish to queue failed", err)
+	}
 }
 
 // Stop остановка воркера

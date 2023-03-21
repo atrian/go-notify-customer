@@ -2,6 +2,7 @@ package config
 
 import (
 	"flag"
+
 	"github.com/caarlos0/env/v6"
 
 	"github.com/atrian/go-notify-customer/internal/interfaces"
@@ -40,6 +41,7 @@ type mailConfig interface {
 	GetMailLogin() string
 	GetMailPassword() string
 	GetMailMessageTheme() string
+	IsMailTLSRequired() bool
 }
 
 type twilioConfig interface {
@@ -49,21 +51,26 @@ type twilioConfig interface {
 }
 
 type Config struct {
-	httpAddress             string `env:"NC_HTTP_ADDRESS"`
-	httpTrustedSubnet       string `env:"NC_TRUSTED_SUBNET"`
-	grpcVaultAddress        string `env:"NC_GRPC_VAULT_ADDRESS"`
-	ampqDSN                 string `env:"NC_AMPQDSN"`
-	notificationQueue       string `env:"NC_DISPATCH_QUEUE"`
-	failedWorksQueue        string `env:"NC_FAILED_QUEUE"`
-	mailSenderAddress       string `env:"NC_MAIL_SENDER_ADDRESS"`
-	mailSMTPHost            string `env:"NC_MAIL_SMTP_HOST"`
-	mailLogin               string `env:"NC_MAIL_LOGIN"`
-	mailPassword            string `env:"NC_MAIL_PASSWORD"`
-	mailDefaultMessageTheme string `env:"NC_MAIL_DEFAULT_MESSAGE_THEME"`
-	twilioAccountSid        string `env:"NC_TWILIO_ACCOUNT_ID"`
-	twilioAuthToken         string `env:"NC_TWILIO_ACCOUNT_ID"`
-	twilioSenderPhone       string `env:"NC_TWILIO_SENDER_PHONE"`
-	log                     interfaces.Logger
+	data Params
+	log  interfaces.Logger
+}
+
+type Params struct {
+	HttpAddress             string `env:"NC_HTTP_ADDRESS"`
+	HttpTrustedSubnet       string `env:"NC_TRUSTED_SUBNET"`
+	GrpcVaultAddress        string `env:"NC_GRPC_VAULT_ADDRESS"`
+	AmpqDSN                 string `env:"NC_AMPQDSN"`
+	NotificationQueue       string `env:"NC_DISPATCH_QUEUE" envDefault:"planned_notifications"`
+	FailedWorksQueue        string `env:"NC_FAILED_QUEUE" envDefault:"failed_notifications"`
+	MailSenderAddress       string `env:"NC_MAIL_SENDER_ADDRESS"`
+	MailSMTPHost            string `env:"NC_MAIL_SMTP_HOST"`
+	MailTLSRequired         bool   `env:"NC_MAIL_TLS_REQUIRED"`
+	MailLogin               string `env:"NC_MAIL_LOGIN"`
+	MailPassword            string `env:"NC_MAIL_PASSWORD"`
+	MailDefaultMessageTheme string `env:"NC_MAIL_DEFAULT_MESSAGE_THEME"`
+	TwilioAccountSid        string `env:"NC_TWILIO_ACCOUNT_ID"`
+	TwilioAuthToken         string `env:"NC_TWILIO_ACCOUNT_ID"`
+	TwilioSenderPhone       string `env:"NC_TWILIO_SENDER_PHONE"`
 }
 
 func (config *Config) GetDefaultResponseContentType() string {
@@ -71,7 +78,7 @@ func (config *Config) GetDefaultResponseContentType() string {
 }
 
 func (config *Config) GetTrustedSubnetAddress() string {
-	return config.httpTrustedSubnet
+	return config.data.HttpTrustedSubnet
 }
 
 func NewConfig(logger interfaces.Logger) Config {
@@ -79,7 +86,6 @@ func NewConfig(logger interfaces.Logger) Config {
 		log: logger,
 	}
 
-	conf.loadDefaults()
 	conf.loadEnv()
 	conf.loadFlags()
 
@@ -87,60 +93,59 @@ func NewConfig(logger interfaces.Logger) Config {
 }
 
 func (config *Config) GetAmpqDSN() string {
-	return config.ampqDSN
+	return config.data.AmpqDSN
 }
 
 func (config *Config) GetHttpServerAddress() string {
-	return config.httpAddress
+	return config.data.HttpAddress
 }
 
 func (config *Config) GetGRPCAddress() string {
-	return config.grpcVaultAddress
+	return config.data.GrpcVaultAddress
 }
 
 func (config *Config) GetNotificationQueue() string {
-	return config.notificationQueue
+	return config.data.NotificationQueue
 }
 
 func (config *Config) GetFailedWorksQueue() string {
-	return config.failedWorksQueue
+	return config.data.FailedWorksQueue
 }
 
 func (config *Config) GetMailSenderAddress() string {
-	return config.mailSenderAddress
+	return config.data.MailSenderAddress
 }
 
 func (config *Config) GetMailSMTPHost() string {
-	return config.mailSMTPHost
+	return config.data.MailSMTPHost
+}
+
+func (config *Config) IsMailTLSRequired() bool {
+	return config.data.MailTLSRequired
 }
 
 func (config *Config) GetMailLogin() string {
-	return config.mailLogin
+	return config.data.MailLogin
 }
 
 func (config *Config) GetMailPassword() string {
-	return config.mailPassword
+	return config.data.MailPassword
 }
 
 func (config *Config) GetMailMessageTheme() string {
-	return config.mailDefaultMessageTheme
+	return config.data.MailDefaultMessageTheme
 }
 
 func (config *Config) GetTwilioAccountSid() string {
-	return config.twilioAccountSid
+	return config.data.TwilioAccountSid
 }
 
 func (config *Config) GetTwilioAuthToken() string {
-	return config.twilioAuthToken
+	return config.data.TwilioAuthToken
 }
 
 func (config *Config) GetTwilioSenderPhone() string {
-	return config.twilioSenderPhone
-}
-
-func (config *Config) loadDefaults() {
-	config.notificationQueue = "planned_notifications"
-	config.failedWorksQueue = "failed_notifications"
+	return config.data.TwilioSenderPhone
 }
 
 // loadFlags загрузка в конфигурацию флагов запуска приложения
@@ -151,15 +156,21 @@ func (config *Config) loadFlags() {
 
 	flag.Parse()
 
-	config.httpAddress = *httpAddress
-	config.grpcVaultAddress = *grpcVaultAddress
-	config.ampqDSN = *ampqDsn
+	config.data.HttpAddress = *httpAddress
+	config.data.GrpcVaultAddress = *grpcVaultAddress
+	config.data.AmpqDSN = *ampqDsn
+	config.log.Debug("Flag params processed")
 }
 
 // loadEnv загрузка в конфигурацию данных из переменных окружения
 func (config *Config) loadEnv() {
-	err := env.Parse(config)
+	params := Params{}
+	err := env.Parse(&params)
+
 	if err != nil {
 		config.log.Error("Config parse error", err)
 	}
+
+	config.data = params
+	config.log.Debug("Env params processed")
 }

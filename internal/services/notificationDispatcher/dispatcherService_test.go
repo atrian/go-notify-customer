@@ -2,6 +2,7 @@ package notificationDispatcher
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -52,12 +53,10 @@ func (suite *DispatcherServiceTestSuite) SetupSuite() {
 
 func (suite *DispatcherServiceTestSuite) Test_dispatch() {
 	personUUID := uuid.New()
-	notificationUUID := uuid.New()
 
 	suite.inputCh <- dto.Notification{
-		Index:            111,
-		NotificationUUID: notificationUUID,
-		EventUUID:        uuid.UUID{},
+		Index:     111,
+		EventUUID: uuid.UUID{},
 		PersonUUIDs: []uuid.UUID{
 			personUUID,
 		},
@@ -66,7 +65,7 @@ func (suite *DispatcherServiceTestSuite) Test_dispatch() {
 	}
 
 	message := <-suite.outChan
-	expected := fmt.Sprintf("queue: message_queue, message: {\"notification_uuid\":\"%v\",\"person_uuid\":\"%v\",\"text\":\"test message\",\"channel\":\"sms\",\"destination_address\":\"888\"}", notificationUUID, personUUID)
+	expected := fmt.Sprintf("queue: %v, message text: test message", suite.config.GetNotificationQueue())
 	assert.Equal(suite.T(), expected, message)
 }
 
@@ -155,7 +154,10 @@ func (a *ampqMock) Consume(queue string) (<-chan amqp.Delivery, error) {
 }
 
 func (a *ampqMock) Publish(queue string, msgBody []byte) error {
-	res := fmt.Sprintf("queue: %v, message: %v", queue, string(msgBody))
+	var message dto.Message
+	_ = json.Unmarshal(msgBody, &message)
+
+	res := fmt.Sprintf("queue: %v, message text: %v", queue, message.Text)
 	a.outputChan <- res
 	return nil
 }

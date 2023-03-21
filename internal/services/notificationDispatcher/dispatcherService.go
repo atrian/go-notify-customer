@@ -163,8 +163,6 @@ func (d Dispatcher) buildMessages(notification dto.Notification) []dto.Message {
 		// Для каждого пользователя берем нужный контакт
 		for _, contact := range contacts {
 			// выбор контакта для канала
-			// TODO REMOVE PD!
-			d.logger.Debug("Start contact locator for:", notificationChannel, fmt.Sprintf("%#v", contact))
 			relatedContact, cErr := contactLocator(notificationChannel, contact)
 			if cErr != nil {
 				d.logger.Error("Dispatcher contactLocator err", cErr)
