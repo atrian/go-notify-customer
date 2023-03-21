@@ -4,6 +4,7 @@ import (
 	"go.uber.org/zap/zapcore"
 	"log"
 	"os"
+	"strings"
 
 	"go.uber.org/zap"
 )
@@ -66,8 +67,8 @@ func (z ZapLogger) Info(message string) {
 	z.logger.Info(message)
 }
 
-func (z ZapLogger) Debug(message string) {
-	z.logger.Debug(message)
+func (z ZapLogger) Debug(message ...string) {
+	z.logger.Debug(strings.Join(message, " "))
 }
 
 func (z ZapLogger) Sync() {
