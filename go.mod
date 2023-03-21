@@ -12,8 +12,6 @@ require (
 	github.com/streadway/amqp v1.0.0
 	github.com/stretchr/testify v1.8.2
 	github.com/swaggo/http-swagger v1.3.4
-	github.com/swaggo/http-swagger/example/go-chi v0.0.0-20230320203503-dce10a857ace
-	github.com/swaggo/http-swagger/v2 v2.0.0
 	github.com/swaggo/swag v1.8.10
 	go.uber.org/zap v1.24.0
 	google.golang.org/grpc v1.53.0
@@ -51,7 +49,6 @@ require (
 	github.com/sirupsen/logrus v1.9.0 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect
 	github.com/swaggo/files v1.0.1 // indirect
-	github.com/swaggo/files/v2 v2.0.0 // indirect
 	github.com/ttacon/builder v0.0.0-20170518171403-c099f663e1c2 // indirect
 	github.com/ttacon/libphonenumber v1.2.1 // indirect
 	go.uber.org/atomic v1.7.0 // indirect

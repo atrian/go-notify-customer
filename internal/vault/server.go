@@ -13,6 +13,8 @@ import (
 
 var BadRequest = errors.New("bad request")
 
+const dummyMailDestination = "dizlabru@yandex.ru"
+
 type ContactServer struct {
 	pb.UnimplementedVaultServer
 	logger interfaces.Logger
@@ -44,7 +46,7 @@ func (s ContactServer) GetContacts(ctx context.Context, in *pb.GetContactsReques
 	email := pb.Contact{
 		PersonUuid:  personUUID.String(),
 		Channel:     "mail",
-		Destination: "dummy@mail.com",
+		Destination: dummyMailDestination,
 	}
 
 	if err != nil {

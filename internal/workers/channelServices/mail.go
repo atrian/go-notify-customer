@@ -4,11 +4,12 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"log"
 	"net"
 	"net/smtp"
 	"strings"
-	
+
+	"github.com/google/uuid"
+
 	"github.com/atrian/go-notify-customer/internal/interfaces"
 )
 
@@ -37,6 +38,7 @@ func NewMail(ctx context.Context, conf configMail, logger interfaces.Logger) *Ma
 
 func (s *Mail) SendMessage(message string, destination string) error {
 	headers := make(map[string]string)
+	headers["Message-ID"] = s.generateMessageId()
 	headers["From"] = s.conf.GetMailSenderAddress()
 	headers["To"] = destination
 	headers["Subject"] = s.conf.GetMailMessageTheme()
@@ -62,24 +64,23 @@ func (s *Mail) SendMessage(message string, destination string) error {
 		ServerName:         host,
 	}
 
-	// Here is the key, you need to call tls.Dial instead of smtp.Dial
-	// for smtp servers running on 465 that require an ssl connection
-	// from the very beginning (no starttls)
+	// TLS connection
 	conn, err := tls.Dial("tcp", servername, tlsconfig)
 	if err != nil {
-		log.Panic(err)
+		return err
 	}
 
 	c, err := smtp.NewClient(conn, host)
+	if err != nil {
+		return err
+	}
+
 	defer func(c *smtp.Client) {
 		cErr := c.Close()
 		if cErr != nil {
 			s.logger.Error("smtp client close err", err)
 		}
 	}(c)
-	if err != nil {
-		return err
-	}
 
 	// Auth
 	if err = c.Auth(auth); err != nil {
@@ -90,7 +91,6 @@ func (s *Mail) SendMessage(message string, destination string) error {
 	if err = c.Mail(s.conf.GetMailSenderAddress()); err != nil {
 		return err
 	}
-
 	if err = c.Rcpt(destination); err != nil {
 		return err
 	}
@@ -101,7 +101,7 @@ func (s *Mail) SendMessage(message string, destination string) error {
 		return err
 	}
 
-	_, err = w.Write([]byte(message))
+	_, err = w.Write([]byte(mail.String()))
 	if err != nil {
 		return err
 	}
@@ -112,4 +112,11 @@ func (s *Mail) SendMessage(message string, destination string) error {
 	}
 
 	return nil
+}
+
+func (s *Mail) generateMessageId() string {
+	// generate message ID
+	msgUUID, _ := uuid.NewRandom()
+	parts := strings.Split(s.conf.GetMailSenderAddress(), "@")
+	return fmt.Sprintf("<%s@%v>", msgUUID.String(), parts[0])
 }
