@@ -18,7 +18,6 @@ var (
 )
 
 type ChannelWorker struct {
-	ctx          context.Context
 	mu           sync.Locker
 	config       config
 	services     map[string]channelService
@@ -29,13 +28,13 @@ type ChannelWorker struct {
 
 // loadServices загрузки стандартных сервисов отправки.
 // Защищено через sync.Locker
-func (c *ChannelWorker) loadServices() {
+func (c *ChannelWorker) loadServices(ctx context.Context) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	c.services = map[string]channelService{
-		"sms":  channelServices.NewTwilio(c.ctx, c.config, c.logger),
-		"mail": channelServices.NewMail(c.ctx, c.config, c.logger),
+		"sms":  channelServices.NewTwilio(c.config, c.logger),
+		"mail": channelServices.NewMail(c.config, c.logger),
 	}
 }
 
@@ -58,17 +57,16 @@ func NewChannelWorker(ctx context.Context, conf config, client interfaces.AmpqCl
 		config:       conf,
 		client:       client,
 		sendStatChan: sendStatChan,
-		ctx:          ctx,
 		logger:       logger,
 	}
 
-	w.loadServices()
+	w.loadServices(ctx)
 
 	return &w
 }
 
 type channelService interface {
-	SendMessage(message string, destination string) error
+	SendMessage(ctx context.Context, message string, destination string) error
 }
 
 type config interface {
@@ -96,7 +94,7 @@ type twilioConfig interface {
 
 // Start потребляет очередь consumeQueue, восстанавливает объект dto.Message из json
 // и отправляет его в ChannelWorker.Send
-func (c *ChannelWorker) Start(consumeQueue string, successQueue string, failQueue string) {
+func (c *ChannelWorker) Start(ctx context.Context, consumeQueue string, successQueue string, failQueue string) {
 	c.client.MigrateDurableQueues(consumeQueue, successQueue, failQueue)
 
 	msgs, err := c.client.Consume(consumeQueue)
@@ -115,16 +113,16 @@ func (c *ChannelWorker) Start(consumeQueue string, successQueue string, failQueu
 
 			c.logger.Info(fmt.Sprintf("Received a message from BUS notificationUUID:%v personUUID: %v, text: %v", message.NotificationUUID, message.PersonUUID, message.Text))
 
-			c.Send(message)
+			c.Send(ctx, message)
 		}
 	}()
 
-	<-c.ctx.Done()
+	<-ctx.Done()
 }
 
 // Send принимает сообщение в формате dto.Message и отправляет его в нужный сервис
 // в случае ошибки пишет в канал статистики через ChannelWorker.sendStat
-func (c *ChannelWorker) Send(message dto.Message) {
+func (c *ChannelWorker) Send(ctx context.Context, message dto.Message) {
 	service, exist := c.services[message.Channel]
 
 	if !exist {
@@ -134,7 +132,7 @@ func (c *ChannelWorker) Send(message dto.Message) {
 		return
 	}
 
-	err := service.SendMessage(message.Text, message.DestinationAddress)
+	err := service.SendMessage(ctx, message.Text, message.DestinationAddress)
 
 	if err != nil {
 		c.logger.Error(fmt.Sprintf("External sender error for notificationUUID:%v", message.NotificationUUID), err)

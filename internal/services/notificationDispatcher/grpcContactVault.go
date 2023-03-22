@@ -46,6 +46,7 @@ func NewContactVaultClient(config grpcConfig, logger logger.Logger) *GrpcContact
 	return &cv
 }
 
+// FindByPersonUUID запрашивает контакты у внешнего защищенного хранилища по gRPC
 func (g GrpcContactVault) FindByPersonUUID(ctx context.Context, personUUID uuid.UUID) (dto.PersonContacts, error) {
 	// Запрашиваем контактные данные у внешнего хранилища
 	client := pb.NewVaultClient(g.conn)
@@ -70,7 +71,9 @@ func (g GrpcContactVault) FindByPersonUUID(ctx context.Context, personUUID uuid.
 	}, nil
 }
 
+// Stop корректное завершение работы
 func (g GrpcContactVault) Stop() error {
+	g.logger.Info("GrpcContactVault client stopped")
 	if g.conn == nil {
 		return ErrNilConnection
 	}

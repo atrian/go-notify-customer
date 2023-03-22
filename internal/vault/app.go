@@ -23,11 +23,10 @@ type grpcConfig interface {
 	GetGRPCAddress() string
 }
 
-func New(ctx context.Context, conf grpcConfig) *App {
+func New(conf grpcConfig) *App {
 	l := logger.NewZapLogger()
 
 	a := App{
-		ctx:    ctx,
 		conf:   conf,
 		logger: l,
 	}
@@ -35,7 +34,7 @@ func New(ctx context.Context, conf grpcConfig) *App {
 	return &a
 }
 
-func (a *App) Run() {
+func (a *App) Run(ctx context.Context) {
 	if a.listener == nil {
 		a.SetDefaultListener()
 	}
@@ -71,5 +70,5 @@ func (a *App) SetDefaultListener() *App {
 }
 
 func (a *App) Stop() {
-	// TODO shutdown
+	a.logger.Info("Vault stopped")
 }

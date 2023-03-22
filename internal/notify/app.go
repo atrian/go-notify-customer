@@ -3,26 +3,25 @@ package notify
 import (
 	"context"
 	"fmt"
-	"github.com/atrian/go-notify-customer/internal/notify/handlers"
-	"github.com/atrian/go-notify-customer/internal/notify/router"
-	"github.com/atrian/go-notify-customer/internal/workers"
 	"log"
 	"net/http"
 
 	"github.com/atrian/go-notify-customer/config"
 	"github.com/atrian/go-notify-customer/internal/dto"
 	"github.com/atrian/go-notify-customer/internal/interfaces"
+	"github.com/atrian/go-notify-customer/internal/notify/handlers"
+	"github.com/atrian/go-notify-customer/internal/notify/router"
 	"github.com/atrian/go-notify-customer/internal/services/event"
 	"github.com/atrian/go-notify-customer/internal/services/notificationDispatcher"
 	"github.com/atrian/go-notify-customer/internal/services/notify"
 	"github.com/atrian/go-notify-customer/internal/services/stat"
 	"github.com/atrian/go-notify-customer/internal/services/template"
+	"github.com/atrian/go-notify-customer/internal/workers"
 	"github.com/atrian/go-notify-customer/pkg/ampq"
 	"github.com/atrian/go-notify-customer/pkg/logger"
 )
 
 type App struct {
-	ctx              context.Context
 	services         services
 	config           config.Config
 	notificationChan chan dto.Notification
@@ -39,7 +38,7 @@ type services struct {
 	statisticService       interfaces.StatService                 // statisticService сервис статистики отправки
 }
 
-func New(ctx context.Context) App {
+func New() App {
 	// логгер приложения
 	appLogger := logger.NewZapLogger()
 
@@ -54,17 +53,16 @@ func New(ctx context.Context) App {
 
 	// Подготовка зависимостей сервисов
 	ampqClient := ampq.New("", appLogger)
-	notificationService := notify.New(notificationChan)
-	eventService := event.New()
-	templateService := template.New()
-	statisticService := stat.New(ctx, statChan)
+	notificationService := notify.New(notificationChan, appLogger)
+	eventService := event.New(appLogger)
+	templateService := template.New(appLogger)
+	statisticService := stat.New(statChan, appLogger)
 
 	contactVault := notificationDispatcher.NewContactVaultClient(&appConf, appLogger)
 	serviceFacade := notificationDispatcher.NewDispatcherServiceFacade(contactVault, templateService, eventService)
-	dispatcherService := notificationDispatcher.New(ctx, notificationChan, &appConf, serviceFacade, ampqClient, appLogger)
+	dispatcherService := notificationDispatcher.New(notificationChan, &appConf, serviceFacade, ampqClient, appLogger)
 
 	return App{
-		ctx:    ctx,
 		config: appConf,
 		services: services{
 			notificationService:    notificationService,
@@ -80,19 +78,19 @@ func New(ctx context.Context) App {
 }
 
 // Run инициализация зависимостей, запуск стартовых методов сервисов, запуск воркеров, запуск веб сервера
-func (a App) Run() {
+func (a App) Run(ctx context.Context) {
 	// операции корректного завершения работы
 	defer a.Stop()
 
 	// Предварительная готовность сервисов
-	a.services.notificationDispatcher.Start()
-	a.services.notificationService.Start()
-	a.services.eventService.Start()
-	a.services.templateService.Start()
-	a.services.statisticService.Start()
+	a.services.notificationDispatcher.Start(ctx)
+	a.services.notificationService.Start(ctx)
+	a.services.eventService.Start(ctx)
+	a.services.templateService.Start(ctx)
+	a.services.statisticService.Start(ctx)
 
 	// запуск фоновых воркеров
-	a.StartWorkers()
+	a.StartWorkers(ctx)
 
 	// подготовка роутера для http сервера, передаем хендлерам сервисы
 	// и логгер
@@ -110,26 +108,30 @@ func (a App) Run() {
 	a.logger.Info(startMessage)
 
 	// запуск веб сервера, по умолчанию с адресом localhost, порт 8080
-	// TODO прокинуть роутер в http сервер
 	log.Fatal(http.ListenAndServe(a.config.GetHttpServerAddress(), routes))
 }
 
 func (a App) Stop() {
-	// корректно завершаем сервисы
-	//a.services.[nService].Stop()
+	a.services.notificationService.Stop()
+	a.services.eventService.Stop()
+	a.services.templateService.Stop()
+	a.services.statisticService.Stop()
+	a.services.notificationDispatcher.Stop()
+	a.logger.Info("All services stopped")
 }
 
-func (a App) StartWorkers() {
+// StartWorkers запуск фоновых воркеров непосредственной отправки сообщений
+func (a App) StartWorkers(ctx context.Context) {
 	var (
 		ampqClient    interfaces.AmpqClient
 		channelWorker interfaces.Worker
 	)
 
-	ampqClient = ampq.NewWithConnection(a.config.GetAmpqDSN(), logger.NewZapLogger())
-	channelWorker = workers.NewChannelWorker(a.ctx, &a.config, ampqClient, a.statChan, a.logger)
+	ampqClient = ampq.NewWithConnection(a.config.GetAmpqDSN(), a.logger)
+	channelWorker = workers.NewChannelWorker(ctx, &a.config, ampqClient, a.statChan, a.logger)
 
 	go func() {
-		channelWorker.Start(a.config.GetNotificationQueue(), "", a.config.GetFailedWorksQueue())
+		channelWorker.Start(ctx, a.config.GetNotificationQueue(), "", a.config.GetFailedWorksQueue())
 		defer channelWorker.Stop()
 	}()
 }

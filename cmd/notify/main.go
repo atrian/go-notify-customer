@@ -28,6 +28,6 @@ import (
 func main() {
 	ctx := context.Background()
 
-	application := notify.New(ctx)
-	application.Run()
+	application := notify.New()
+	application.Run(ctx)
 }

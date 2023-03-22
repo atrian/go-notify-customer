@@ -1,3 +1,6 @@
+// Package notificationDispatcher диспетчер подготовки уведомлений к отправке
+// обращается к другим сервисам зя дополнительной информацией по уведомлению через фасад serviceGateway
+// результат работы отправляет во внешнюю очередь (RabbitMQ)
 package notificationDispatcher
 
 import (
@@ -9,40 +12,46 @@ import (
 
 	"github.com/atrian/go-notify-customer/internal/dto"
 	"github.com/atrian/go-notify-customer/internal/interfaces"
-	"github.com/atrian/go-notify-customer/pkg/logger"
 )
 
+// serviceGateway интерфейс сервисного фасада, ограничение на досупные методы автономных сервисов.
 type serviceGateway interface {
+	// getContacts запрос контактов во внешнем защищенном vault. gRPC
 	getContacts(ctx context.Context, personUUIDs []uuid.UUID) ([]dto.PersonContacts, error)
+	// getTemplates запрос шаблона сообщения для бизнес события
 	getTemplates(ctx context.Context, eventUUID uuid.UUID) ([]dto.Template, error)
+	// getEvent запрос деталей бизнес события
 	getEvent(ctx context.Context, eventUuid uuid.UUID) (dto.Event, error)
+	// prepareTemplate выполнение именованных подстановок в шаблоне сообщения
 	prepareTemplate(template string, replaces []dto.MessageParam) string
 }
 
+// dispatcherConfig интерфейс кинфигурации доступной сервису notificationDispatcher
 type dispatcherConfig interface {
 	GetAmpqDSN() string
 	GetNotificationQueue() string
 }
 
+// Dispatcher содержит канал по котороку получает входящие уведомлений
+// конфигурацию, фасад с нужными для работы сервисами,
+// ampq клиент с интерфейсом interfaces.AmpqClient
+// и логгер с интерфейсом interfaces.Logger
 type Dispatcher struct {
-	ctx              context.Context
 	notificationChan <-chan dto.Notification
 	config           dispatcherConfig
 	services         serviceGateway
 	ampqClient       interfaces.AmpqClient
-	logger           logger.Logger
+	logger           interfaces.Logger
 }
 
 func New(
-	ctx context.Context,
 	notificationChan chan dto.Notification,
 	config dispatcherConfig,
 	serviceGateway serviceGateway,
 	ampqClient interfaces.AmpqClient,
-	logger logger.Logger) *Dispatcher {
+	logger interfaces.Logger) *Dispatcher {
 
 	d := Dispatcher{
-		ctx:              ctx,
 		notificationChan: notificationChan,
 		config:           config,
 		services:         serviceGateway,
@@ -55,7 +64,10 @@ func New(
 
 // Start стартовые операции для notificationDispatcher - ampq миграция,
 // запуск прослушивания канала
-func (d Dispatcher) Start() {
+func (d Dispatcher) Start(ctx context.Context) {
+	d.logger.Info("Notification dispatcher started")
+
+	// Подключаем ampq клиент
 	err := d.ampqClient.Connect(d.config.GetAmpqDSN())
 	if err != nil {
 		d.logger.Error("Dispatcher ampqClient.Connect err", err)
@@ -64,14 +76,19 @@ func (d Dispatcher) Start() {
 	d.ampqClient.MigrateDurableQueues(d.config.GetNotificationQueue())
 
 	// слушаем канал с уведомлениями, строим сообщения и отправляем на исполнение
-	go d.listenInputChannel(d.ctx, d.notificationChan)
+	go d.listenInputChannel(ctx, d.notificationChan)
 }
 
+// Stop корректное завершение работы
 func (d Dispatcher) Stop() {
 	d.ampqClient.Stop()
+	d.logger.Info("Notification dispatcher stopped")
 }
 
+// dispatch отправка готового сообщения в очередь для исполнения
+// channel worker'ом.
 func (d Dispatcher) dispatch(message dto.Message) error {
+	// Готовим json и публикуем в очередь
 	jsonMessage, err := json.Marshal(message)
 	if err != nil {
 		d.logger.Error("Message JSON marshal failed", err)
@@ -101,8 +118,10 @@ func (d Dispatcher) listenInputChannel(ctx context.Context, input <-chan dto.Not
 
 			d.logger.Debug(fmt.Sprintf("Notification received: %v", notification))
 
-			messages := d.buildMessages(notification)
+			// собираем сообщения
+			messages := d.buildMessages(ctx, notification)
 
+			// размещаем сообщения во внешнюю очередь на отправку
 			for i := 0; i < len(messages); i++ {
 				dErr := d.dispatch(messages[i])
 
@@ -111,7 +130,7 @@ func (d Dispatcher) listenInputChannel(ctx context.Context, input <-chan dto.Not
 				}
 			}
 
-		case <-ctx.Done():
+		case <-ctx.Done(): // отбой по контексту
 			return
 		default:
 			// do nothing
@@ -120,23 +139,23 @@ func (d Dispatcher) listenInputChannel(ctx context.Context, input <-chan dto.Not
 }
 
 // buildMessages формирует клиентские сообщения из уведомления, шаблона и контактов
-func (d Dispatcher) buildMessages(notification dto.Notification) []dto.Message {
+func (d Dispatcher) buildMessages(ctx context.Context, notification dto.Notification) []dto.Message {
 	var messages []dto.Message
 
 	// запрос контактов
-	contacts, err := d.services.getContacts(d.ctx, notification.PersonUUIDs)
+	contacts, err := d.services.getContacts(ctx, notification.PersonUUIDs)
 	if err != nil {
 		d.logger.Error("Dispatcher getContacts err", err)
 	}
 
 	// запрос бизнес события
-	event, err := d.services.getEvent(d.ctx, notification.EventUUID)
+	event, err := d.services.getEvent(ctx, notification.EventUUID)
 	if err != nil {
 		d.logger.Error("Dispatcher getEvent err", err)
 	}
 
 	// запрос шаблона для события
-	templates, err := d.services.getTemplates(d.ctx, notification.EventUUID)
+	templates, err := d.services.getTemplates(ctx, notification.EventUUID)
 	if err != nil {
 		d.logger.Error("Dispatcher getTemplates err", err)
 	}

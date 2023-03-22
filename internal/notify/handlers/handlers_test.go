@@ -39,7 +39,7 @@ func TestMiddlewareSubnetRestriction(t *testing.T) {
 
 	appConf := subnetConf{}
 
-	service := event.New()
+	service := event.New(appLogger)
 
 	getEndpoint := fmt.Sprintf("/api/v1/events")
 

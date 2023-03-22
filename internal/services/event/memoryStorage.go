@@ -12,6 +12,9 @@ import (
 
 var NotFound = errors.New("not found")
 
+// MemoryStorage in-memory хранилище для сервиса event
+// ! потокобезопасно, работает на sync.Map
+// ! is safe for concurrent use
 type MemoryStorage struct {
 	data sync.Map
 }

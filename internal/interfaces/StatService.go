@@ -16,7 +16,7 @@ type StatService interface {
 
 	// All FindByPersonUUID FindByEventUUID - выдача статистики в разрезах
 	All(ctx context.Context) []dto.Stat
-	Store(stat dto.Stat) error
+	Store(ctx context.Context, stat dto.Stat) error
 	FindByPersonUUID(ctx context.Context, personUUID uuid.UUID) ([]dto.Stat, error)
 	FindByNotificationId(ctx context.Context, notificationUUID uuid.UUID) ([]dto.Stat, error)
 }

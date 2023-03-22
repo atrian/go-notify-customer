@@ -36,10 +36,8 @@ func (suite *VaultTestSuite) SetupSuite() {
 
 	suite.port = listener.Addr().(*net.TCPAddr).Port
 
-	ctx := context.Background()
-
-	suite.app = New(ctx, mockConfig{})
-	go suite.app.SetCustomListener(listener).Run()
+	suite.app = New(mockConfig{})
+	go suite.app.SetCustomListener(listener).Run(context.TODO())
 }
 
 func (suite *VaultTestSuite) TearDownSuite() {

@@ -9,7 +9,6 @@ import (
 )
 
 type Twilio struct {
-	ctx    context.Context
 	cfg    configTwilio
 	logger interfaces.Logger
 }
@@ -20,15 +19,14 @@ type configTwilio interface {
 	GetTwilioSenderPhone() string
 }
 
-func NewTwilio(ctx context.Context, cfg configTwilio, logger interfaces.Logger) *Twilio {
+func NewTwilio(cfg configTwilio, logger interfaces.Logger) *Twilio {
 	return &Twilio{
-		ctx:    ctx,
 		cfg:    cfg,
 		logger: logger,
 	}
 }
 
-func (s *Twilio) SendMessage(message string, destination string) error {
+func (s *Twilio) SendMessage(ctx context.Context, message string, destination string) error {
 	twilioSvc, err := twilio.New(
 		s.cfg.GetTwilioAccountSid(),
 		s.cfg.GetTwilioAuthToken(),

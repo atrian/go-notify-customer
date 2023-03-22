@@ -1,10 +1,14 @@
+// Package notify фронт сервис для приема уведомлений на отправку
+// Выполняет приоритезацию уведомлений и передает далее в NotificationDispatcher
 package notify
 
 import (
 	"container/heap"
+	"context"
 	"errors"
 
 	"github.com/atrian/go-notify-customer/internal/dto"
+	"github.com/atrian/go-notify-customer/internal/interfaces"
 )
 
 var (
@@ -12,17 +16,17 @@ var (
 )
 
 type Service struct {
-	//limiter           RateLimiter
-	//notificationLimit int
 	queue      PriorityQueue
-	resultChan chan dto.Notification
+	resultChan chan<- dto.Notification
+	logger     interfaces.Logger
 }
 
 // New Конфигурация зависимостей сервиса
-func New(resultChan chan dto.Notification) *Service {
+func New(resultChan chan dto.Notification, logger interfaces.Logger) *Service {
 	s := Service{
-		queue:      nil,
-		resultChan: resultChan,
+		queue:      nil,        // очередь с приоритетом
+		resultChan: resultChan, // выходной канал после приоритезации сообщений
+		logger:     logger,
 	}
 
 	heap.Init(&s.queue)
@@ -31,15 +35,16 @@ func New(resultChan chan dto.Notification) *Service {
 }
 
 // Start стартовые процедуры - логгер?
-func (s Service) Start() {
-
+func (s Service) Start(ctx context.Context) {
+	s.logger.Info("Notification service started")
 }
 
 func (s Service) Stop() {
 	close(s.resultChan)
+	s.logger.Info("Notification service stopped")
 }
 
-func (s Service) ProcessNotification(notifications []dto.Notification) error {
+func (s Service) ProcessNotification(ctx context.Context, notifications []dto.Notification) error {
 	// приоритизация очереди уведомлений
 	for i := 0; i < len(notifications); i++ {
 		heap.Push(&s.queue, &notifications[i])

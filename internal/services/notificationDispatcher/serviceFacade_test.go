@@ -2,9 +2,11 @@ package notificationDispatcher
 
 import (
 	"context"
-	"github.com/atrian/go-notify-customer/internal/dto"
-	"github.com/google/uuid"
 	"testing"
+
+	"github.com/google/uuid"
+
+	"github.com/atrian/go-notify-customer/internal/dto"
 )
 
 func TestServiceFacade_prepareTemplate(t *testing.T) {

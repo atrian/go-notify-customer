@@ -51,7 +51,7 @@ func ExampleHandler_ProcessNotifications() {
 		close(done)
 	}()
 
-	service := notify.New(resultChan)
+	service := notify.New(resultChan, appLogger)
 	getEndpoint := fmt.Sprintf("/api/v1/notifications")
 
 	h := handlers.New(&appConf, nil, service, nil, nil, appLogger)

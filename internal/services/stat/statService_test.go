@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/atrian/go-notify-customer/internal/dto"
+	"github.com/atrian/go-notify-customer/pkg/logger"
 )
 
 type StatTestSuite struct {
@@ -45,12 +46,13 @@ func (suite *StatTestSuite) SetupSuite() {
 
 func (suite *StatTestSuite) SetupTest() {
 	ctx, cancel := context.WithCancel(context.TODO())
+	log := logger.NewZapLogger()
 	suite.cancel = cancel
 	statChan := make(chan dto.Stat)
 
-	suite.service = New(ctx, statChan)
+	suite.service = New(statChan, log)
 
-	suite.service.Start()
+	suite.service.Start(ctx)
 
 	for i := 0; i < len(suite.stats); i++ {
 		statChan <- suite.stats[i]
@@ -64,13 +66,14 @@ func (suite *StatTestSuite) Test_All() {
 }
 
 func (suite *StatTestSuite) Test_Store() {
+	ctx := context.TODO()
 	newStat := dto.Stat{
 		PersonUUID:       uuid.New(),
 		NotificationUUID: uuid.New(),
 		Status:           dto.Sent,
 	}
 
-	err := suite.service.Store(newStat)
+	err := suite.service.Store(ctx, newStat)
 	assert.NoError(suite.T(), err)
 
 	// Запрос существующего объекта

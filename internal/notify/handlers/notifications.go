@@ -44,7 +44,7 @@ func (h *Handler) ProcessNotifications() http.HandlerFunc {
 			})
 		}
 
-		err = h.services.notify.ProcessNotification(notifications)
+		err = h.services.notify.ProcessNotification(r.Context(), notifications)
 		if err != nil {
 			if errors.Is(err, notify.NotificationLimitExceeded) {
 				http.Error(w, "limit exceed", http.StatusTooManyRequests)

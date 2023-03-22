@@ -32,7 +32,7 @@ func ExampleHandler_UpdateEvent() {
 	appLogger := logger.NewZapLogger()
 	appConf := mockHandlerConfig{}
 
-	eService := event.New()
+	eService := event.New(appLogger)
 	stored, _ := eService.Store(context.Background(), testEvent)
 
 	h := handlers.New(&appConf, eService, nil, nil, nil, appLogger)
@@ -84,7 +84,7 @@ func ExampleHandler_DeleteEvent() {
 	appLogger := logger.NewZapLogger()
 	appConf := mockHandlerConfig{}
 
-	eService := event.New()
+	eService := event.New(appLogger)
 	stored, _ := eService.Store(context.Background(), testEvent)
 
 	h := handlers.New(&appConf, eService, nil, nil, nil, appLogger)
@@ -139,7 +139,7 @@ func ExampleHandler_GetEvent() {
 	appLogger := logger.NewZapLogger()
 	appConf := mockHandlerConfig{}
 
-	eService := event.New()
+	eService := event.New(appLogger)
 	stored, _ := eService.Store(context.Background(), testEvent)
 
 	getEndpoint := fmt.Sprintf("/api/v1/events/%v", stored.EventUUID)
@@ -195,7 +195,7 @@ func ExampleHandler_GetEvents() {
 	appLogger := logger.NewZapLogger()
 	appConf := mockHandlerConfig{}
 
-	service := event.New()
+	service := event.New(appLogger)
 	_, _ = service.Store(context.Background(), testEvent)
 	_, _ = service.Store(context.Background(), testEvent2)
 
@@ -257,7 +257,7 @@ func ExampleHandler_StoreEvent() {
 	appLogger := logger.NewZapLogger()
 	appConf := mockHandlerConfig{}
 
-	service := event.New()
+	service := event.New(appLogger)
 
 	h := handlers.New(&appConf, service, nil, nil, nil, appLogger)
 

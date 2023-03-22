@@ -10,24 +10,32 @@ import (
 )
 
 var (
-	_          serviceGateway = (*ServiceFacade)(nil)
-	templateRe                = regexp.MustCompile(`(?m)\[([a-zA-Z]+\d*)]`)
-	spaceRe                   = regexp.MustCompile(`\s+`)
+	_ serviceGateway = (*ServiceFacade)(nil)
+	// regexp для поиска параметров [param1] [param2] в теле сообщения
+	templateRe = regexp.MustCompile(`(?m)\[([a-zA-Z]+\d*)]`)
+	// regexp для замены множественных пробелов на один
+	spaceRe = regexp.MustCompile(`\s+`)
 )
 
+// contactVault интерфейс клиента хранилища контакных данных
 type contactVault interface {
+	// FindByPersonUUID поиск по uuid
 	FindByPersonUUID(ctx context.Context, personUUID uuid.UUID) (dto.PersonContacts, error)
+	// Stop остановка клиента
 	Stop() error
 }
 
+// templateService контракт на сервис шаблонов. Доступен поиск по бизнес событию
 type templateService interface {
 	FindByEventId(ctx context.Context, eventUUID uuid.UUID) ([]dto.Template, error)
 }
 
+// eventService контракт на сервис бизнес событий.
 type eventService interface {
 	FindById(ctx context.Context, eventUUID uuid.UUID) (dto.Event, error)
 }
 
+// ServiceFacade сервисный фасад для нужд notificationDispatcher
 type ServiceFacade struct {
 	contact  contactVault
 	template templateService

@@ -4,12 +4,11 @@ import (
 	"context"
 	"testing"
 
-	"github.com/atrian/go-notify-customer/internal/dto"
-
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/google/uuid"
+	"github.com/atrian/go-notify-customer/internal/dto"
 )
 
 type MemoryStorageTestSuite struct {

@@ -37,9 +37,9 @@ func ExampleHandler_GetStats() {
 	appLogger := logger.NewZapLogger()
 	appConf := mockHandlerConfig{}
 
-	service := stat.New(context.Background(), nil)
-	_ = service.Store(testStat)
-	_ = service.Store(testStat2)
+	service := stat.New(nil, appLogger)
+	_ = service.Store(context.TODO(), testStat)
+	_ = service.Store(context.TODO(), testStat2)
 
 	getEndpoint := fmt.Sprintf("/api/v1/stats")
 
@@ -109,10 +109,10 @@ func ExampleHandler_GetStatByPersonUUID() {
 	appLogger := logger.NewZapLogger()
 	appConf := mockHandlerConfig{}
 
-	service := stat.New(context.Background(), nil)
-	_ = service.Store(testStat)
-	_ = service.Store(testStat2)
-	_ = service.Store(testStat3)
+	service := stat.New(nil, nil)
+	_ = service.Store(context.TODO(), testStat)
+	_ = service.Store(context.TODO(), testStat2)
+	_ = service.Store(context.TODO(), testStat3)
 
 	getEndpoint := fmt.Sprintf("/api/v1/stats/person/%v", personUUID)
 
@@ -182,10 +182,10 @@ func ExampleHandler_GetStatByNotificationId() {
 	appLogger := logger.NewZapLogger()
 	appConf := mockHandlerConfig{}
 
-	service := stat.New(context.Background(), nil)
-	_ = service.Store(testStat)
-	_ = service.Store(testStat2)
-	_ = service.Store(testStat3)
+	service := stat.New(nil, nil)
+	_ = service.Store(context.TODO(), testStat)
+	_ = service.Store(context.TODO(), testStat2)
+	_ = service.Store(context.TODO(), testStat3)
 
 	getEndpoint := fmt.Sprintf("/api/v1/stats/notification/%v", notificationUUID)
 

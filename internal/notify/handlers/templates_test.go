@@ -38,7 +38,7 @@ func ExampleHandler_UpdateTemplate() {
 	appLogger := logger.NewZapLogger()
 	appConf := mockHandlerConfig{}
 
-	tService := template.New()
+	tService := template.New(appLogger)
 	_, _ = tService.Store(context.Background(), testTemplate)
 
 	h := handlers.New(&appConf, nil, nil, nil, tService, appLogger)
@@ -89,7 +89,7 @@ func ExampleHandler_DeleteTemplate() {
 	appLogger := logger.NewZapLogger()
 	appConf := mockHandlerConfig{}
 
-	tService := template.New()
+	tService := template.New(appLogger)
 	_, _ = tService.Store(context.Background(), testTemplate)
 
 	h := handlers.New(&appConf, nil, nil, nil, tService, appLogger)
@@ -143,7 +143,7 @@ func ExampleHandler_GetTemplate() {
 	appLogger := logger.NewZapLogger()
 	appConf := mockHandlerConfig{}
 
-	tService := template.New()
+	tService := template.New(appLogger)
 	stored, _ := tService.Store(context.Background(), testTemplate)
 
 	getEndpoint := fmt.Sprintf("/api/v1/templates/%v", stored.TemplateUUID)
@@ -201,7 +201,7 @@ func ExampleHandler_GetTemplates() {
 	appLogger := logger.NewZapLogger()
 	appConf := mockHandlerConfig{}
 
-	tService := template.New()
+	tService := template.New(appLogger)
 	_, _ = tService.Store(context.Background(), testTemplate)
 	_, _ = tService.Store(context.Background(), testTemplate2)
 
@@ -266,7 +266,7 @@ func ExampleHandler_StoreTemplate() {
 	appLogger := logger.NewZapLogger()
 	appConf := mockHandlerConfig{}
 
-	tService := template.New()
+	tService := template.New(appLogger)
 
 	h := handlers.New(&appConf, nil, nil, nil, tService, appLogger)
 

@@ -14,6 +14,9 @@ const dateTimeFormat = "2006-01-02 15:04:05"
 
 var NotFound = errors.New("not found")
 
+// MemoryStorage in-memory хранилище для сервиса template
+// ! потокобезопасно, работает на sync.Map
+// ! is safe for concurrent use
 type MemoryStorage struct {
 	data sync.Map
 }

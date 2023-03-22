@@ -28,15 +28,14 @@ type configMail interface {
 	GetMailMessageTheme() string
 }
 
-func NewMail(ctx context.Context, conf configMail, logger interfaces.Logger) *Mail {
+func NewMail(conf configMail, logger interfaces.Logger) *Mail {
 	return &Mail{
 		conf:   conf,
-		ctx:    ctx,
 		logger: logger,
 	}
 }
 
-func (s *Mail) SendMessage(message string, destination string) error {
+func (s *Mail) SendMessage(ctx context.Context, message string, destination string) error {
 	headers := make(map[string]string)
 	headers["Message-ID"] = s.generateMessageId()
 	headers["From"] = s.conf.GetMailSenderAddress()

@@ -2,7 +2,7 @@ package dto
 
 import "github.com/google/uuid"
 
-// Event структура бизнес события
+// Event структура бизнес события для передачи между слоями приложения
 type Event struct {
 	EventUUID            uuid.UUID `json:"event_uuid"`                      // EventUUID связь с UUID бизнес события
 	Title                string    `json:"title"`                           // Title название бизнес события
@@ -11,7 +11,7 @@ type Event struct {
 	NotificationChannels []string  `json:"notification_channels,omitempty"` // NotificationChannels каналы отправки для данного события
 }
 
-// IncomingEvent структура входящего бизнес события
+// IncomingEvent структура входящего бизнес события для анмаршаллинга json
 type IncomingEvent struct {
 	Title                string   `json:"title"`                           // Title название бизнес события
 	Description          string   `json:"description,omitempty"`           // Description описание бизнес события

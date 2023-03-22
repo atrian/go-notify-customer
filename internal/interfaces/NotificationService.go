@@ -1,6 +1,8 @@
 package interfaces
 
 import (
+	"context"
+
 	"github.com/atrian/go-notify-customer/internal/dto"
 )
 
@@ -9,5 +11,5 @@ type NotificationService interface {
 	BaseService
 
 	// ProcessNotification приоритезация, лимитер уведомлений
-	ProcessNotification(notification []dto.Notification) error
+	ProcessNotification(ctx context.Context, notification []dto.Notification) error
 }

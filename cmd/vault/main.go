@@ -10,9 +10,8 @@ import (
 
 func main() {
 	ctx := context.Background()
-
 	conf := config.NewConfig(logger.NewZapLogger())
 
-	application := vault.New(ctx, &conf)
-	application.Run()
+	application := vault.New(&conf)
+	application.Run(ctx)
 }

@@ -41,14 +41,14 @@ func (suite *DispatcherServiceTestSuite) SetupSuite() {
 	suite.outChan = outChan
 
 	suite.config = &configMock{}
-	suite.dispatcher = New(context.Background(),
+	suite.dispatcher = New(
 		inputCh,
 		suite.config,
 		NewDispatcherServiceFacade(&contactMock{}, &templateMock{}, &eventMock{}),
 		suite.ampq,
 		logger.NewZapLogger())
 
-	suite.dispatcher.Start()
+	suite.dispatcher.Start(context.Background())
 }
 
 func (suite *DispatcherServiceTestSuite) Test_dispatch() {
