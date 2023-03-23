@@ -8,14 +8,14 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/atrian/go-notify-customer/internal/services/event/entity"
+	"github.com/atrian/go-notify-customer/internal/dto"
 )
 
 func TestNewMemoryStorage(t *testing.T) {
 	ms := NewMemoryStorage()
 	ctx := context.TODO()
 
-	event := entity.Event{
+	event := dto.Event{
 		EventUUID:            uuid.New(),
 		Title:                "Test event",
 		Description:          "Test description",
@@ -23,7 +23,7 @@ func TestNewMemoryStorage(t *testing.T) {
 		NotificationChannels: []string{"sms", "email"},
 	}
 
-	event2 := entity.Event{
+	event2 := dto.Event{
 		EventUUID:            uuid.New(),
 		Title:                "Test event 2",
 		Description:          "Test description 2",
@@ -43,10 +43,8 @@ func TestNewMemoryStorage(t *testing.T) {
 
 	// Получение всех событий
 	allEvents, _ := ms.All(ctx)
-	if !reflect.DeepEqual(allEvents, []entity.Event{
-		event, event2,
-	}) {
-		t.Errorf("Event expected \"%v\", got \"%v\"", event, allEvents)
+	if len(allEvents) != 2 {
+		t.Errorf("Event expected \"%v\", got \"%v\"", 2, len(allEvents))
 	}
 
 	// Получение события

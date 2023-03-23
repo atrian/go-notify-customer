@@ -7,6 +7,6 @@ type Logger interface {
 	Error(message string, err error)
 	Warning(message string)
 	Info(message string)
-	Debug(message string)
+	Debug(message ...string)
 	Sync()
 }

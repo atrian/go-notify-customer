@@ -1,0 +1,11 @@
+version: "3.2"
+services:
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: 'go-notify-client_rabbitmq'
+    ports:
+      - 5672:5672
+      - 15672:15672
+    volumes:
+      - ./infrastructure/_rabbit/data/:/var/lib/rabbitmq/
+      - ./infrastructure/_rabbit/log/:/var/log/rabbitmq

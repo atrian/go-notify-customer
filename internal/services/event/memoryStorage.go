@@ -7,11 +7,14 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/atrian/go-notify-customer/internal/services/event/entity"
+	"github.com/atrian/go-notify-customer/internal/dto"
 )
 
 var NotFound = errors.New("not found")
 
+// MemoryStorage in-memory хранилище для сервиса event
+// ! потокобезопасно, работает на sync.Map
+// ! is safe for concurrent use
 type MemoryStorage struct {
 	data sync.Map
 }
@@ -21,11 +24,11 @@ func NewMemoryStorage() *MemoryStorage {
 	return &ms
 }
 
-func (m *MemoryStorage) All(ctx context.Context) ([]entity.Event, error) {
-	var events []entity.Event
+func (m *MemoryStorage) All(ctx context.Context) ([]dto.Event, error) {
+	var events []dto.Event
 
 	m.data.Range(func(key, value interface{}) bool {
-		event := value.(entity.Event)
+		event := value.(dto.Event)
 		events = append(events, event)
 		return true
 	})
@@ -33,26 +36,26 @@ func (m *MemoryStorage) All(ctx context.Context) ([]entity.Event, error) {
 	return events, nil
 }
 
-func (m *MemoryStorage) Update(ctx context.Context, event entity.Event) error {
+func (m *MemoryStorage) Update(ctx context.Context, event dto.Event) error {
 	m.data.Store(event.EventUUID.String(), event)
 
 	return nil
 }
 
-func (m *MemoryStorage) Store(ctx context.Context, event entity.Event) error {
+func (m *MemoryStorage) Store(ctx context.Context, event dto.Event) error {
 	m.data.Store(event.EventUUID.String(), event)
 
 	return nil
 }
 
-func (m *MemoryStorage) GetById(ctx context.Context, eventUUID uuid.UUID) (entity.Event, error) {
+func (m *MemoryStorage) GetById(ctx context.Context, eventUUID uuid.UUID) (dto.Event, error) {
 	event, ok := m.data.Load(eventUUID.String())
 
 	if !ok {
-		return entity.Event{}, NotFound
+		return dto.Event{}, NotFound
 	}
 
-	return event.(entity.Event), nil
+	return event.(dto.Event), nil
 }
 
 func (m *MemoryStorage) DeleteById(ctx context.Context, eventUUID uuid.UUID) error {

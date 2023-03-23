@@ -3,9 +3,9 @@ package interfaces
 import (
 	"context"
 
-	"github.com/google/uuid"
+	"github.com/atrian/go-notify-customer/internal/dto"
 
-	"github.com/atrian/go-notify-customer/internal/services/event/entity"
+	"github.com/google/uuid"
 )
 
 // EventService Интерфейс сервиса хранения данных о бизнес событиях
@@ -15,10 +15,10 @@ type EventService interface {
 	BaseService
 
 	// All Store StoreBatch Update FindBy DeleteById - CRUD
-	All(ctx context.Context) []entity.Event
-	Store(ctx context.Context, event entity.Event) (entity.Event, error)
-	StoreBatch(ctx context.Context, events []entity.Event) ([]entity.Event, error)
-	Update(ctx context.Context, event entity.Event) (entity.Event, error)
-	FindById(ctx context.Context, eventUUID uuid.UUID) (entity.Event, error)
+	All(ctx context.Context) []dto.Event
+	Store(ctx context.Context, event dto.Event) (dto.Event, error)
+	StoreBatch(ctx context.Context, events []dto.Event) ([]dto.Event, error)
+	Update(ctx context.Context, event dto.Event) (dto.Event, error)
+	FindById(ctx context.Context, eventUUID uuid.UUID) (dto.Event, error)
 	DeleteById(ctx context.Context, eventUUID uuid.UUID) error
 }

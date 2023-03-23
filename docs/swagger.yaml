@@ -1,0 +1,505 @@
+basePath: /
+definitions:
+  dto.Event:
+    properties:
+      default_priority:
+        description: DefaultPriority приоритет уведомления с таким событием по умолчанию
+        type: integer
+      description:
+        description: Description описание бизнес события
+        type: string
+      event_uuid:
+        description: EventUUID связь с UUID бизнес события
+        type: string
+      notification_channels:
+        description: NotificationChannels каналы отправки для данного события
+        items:
+          type: string
+        type: array
+      title:
+        description: Title название бизнес события
+        type: string
+    type: object
+  dto.IncomingEvent:
+    properties:
+      default_priority:
+        description: DefaultPriority приоритет уведомления с таким событием по умолчанию
+        type: integer
+      description:
+        description: Description описание бизнес события
+        type: string
+      notification_channels:
+        description: NotificationChannels каналы отправки для данного события
+        items:
+          type: string
+        type: array
+      title:
+        description: Title название бизнес события
+        type: string
+    type: object
+  dto.IncomingNotification:
+    properties:
+      event_uuid:
+        description: EventUUID связь с UUID бизнес события
+        type: string
+      message_params:
+        description: MessageParams key-value подстановки в шаблон уведомления
+        items:
+          $ref: '#/definitions/dto.MessageParam'
+        type: array
+      person_uuids:
+        description: PersonUUIDs связь с пользователями - получателями уведомления
+        items:
+          type: string
+        type: array
+      priority:
+        description: Priority опциональный приоритет уведомления
+        type: integer
+    type: object
+  dto.IncomingTemplate:
+    properties:
+      body:
+        description: Body тело шаблона
+        type: string
+      channel_type:
+        description: ChannelType связь с каналом отправки
+        type: string
+      description:
+        description: Description описание шаблона
+        type: string
+      event_uuid:
+        description: EventUUID связь с UUID бизнес события
+        type: string
+      title:
+        description: Title название шаблона
+        type: string
+    type: object
+  dto.MessageParam:
+    properties:
+      key:
+        description: Key ключ по которому будет произведен поиск в теле уведомления
+        type: string
+      value:
+        description: Value значение которое будет подставлено вместо ключа в шаблоне
+        type: string
+    type: object
+  dto.Stat:
+    properties:
+      created_at:
+        description: CreatedAt дата и время отправки
+        type: string
+      notification_uuid:
+        description: NotificationUUID связь с уведомлением
+        type: string
+      person_uuid:
+        description: PersonUUID связь отправленного уведомления с клиентом
+        type: string
+      stat_uuid:
+        description: StatUUID id записи статистики
+        type: string
+      status:
+        allOf:
+        - $ref: '#/definitions/dto.StatStatus'
+        description: Status статус отправки
+    type: object
+  dto.StatStatus:
+    enum:
+    - 1
+    - 2
+    - 3
+    type: integer
+    x-enum-comments:
+      BadChannel: Канал отправки не поддерживается
+      Failed: Ошибка отправки
+      Sent: Уведомление отправлено
+    x-enum-varnames:
+    - Sent
+    - Failed
+    - BadChannel
+  dto.Template:
+    properties:
+      body:
+        description: Body тело шаблона
+        type: string
+      channel_type:
+        description: ChannelType связь с каналом отправки
+        type: string
+      description:
+        description: Description описание шаблона
+        type: string
+      event_uuid:
+        description: EventUUID связь с UUID бизнес события
+        type: string
+      template_uuid:
+        description: TemplateUUID - id шаблона
+        type: string
+      title:
+        description: Title название шаблона
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: Сервис отправки уведомлений.
+  title: Go-notify-client
+  version: "1.0"
+paths:
+  /api/v1/events:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.Event'
+            type: array
+        "500":
+          description: Internal Server Error
+      summary: Запрос всех доступных шаблонов
+      tags:
+      - Event
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Принимает dto события, отдает сохраненное событие с идентификатором
+        in: body
+        name: event
+        required: true
+        schema:
+          $ref: '#/definitions/dto.IncomingEvent'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Event'
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+      summary: сохранение бизнес события
+      tags:
+      - Event
+  /api/v1/events/{event_uuid}:
+    delete:
+      parameters:
+      - description: ID бизнес события в формате UUID v4
+        in: path
+        name: event_uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      summary: удаление бизнес события
+      tags:
+      - Event
+    get:
+      parameters:
+      - description: ID события в формате UUID v4
+        in: path
+        name: event_uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Event'
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      summary: Запрос деталей бизнес события
+      tags:
+      - Event
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID бизнес события в формате UUID v4
+        in: path
+        name: event_uuid
+        required: true
+        type: string
+      - description: Test
+        in: body
+        name: event
+        required: true
+        schema:
+          $ref: '#/definitions/dto.IncomingEvent'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Event'
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      summary: обновление бизнес события
+      tags:
+      - Event
+  /api/v1/notifications:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Принимает JSON dto уведомлений, возвращает код 200 при успешной
+          постановке, 429 при привышении лимита
+        in: body
+        name: notification
+        required: true
+        schema:
+          items:
+            $ref: '#/definitions/dto.IncomingNotification'
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "429":
+          description: Too Many Requests
+        "500":
+          description: Internal Server Error
+      summary: отправка уведомлений
+      tags:
+      - Notifications
+  /api/v1/notifications/seed:
+    get:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.IncomingNotification'
+        "500":
+          description: Internal Server Error
+      summary: Создает бизнес событие и шаблон к нему, возвращает подготовленный JSON
+        для запроса POST /api/v1/notifications
+      tags:
+      - Notifications
+  /api/v1/stats:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.Stat'
+            type: array
+        "500":
+          description: Internal Server Error
+      summary: Запрос всей статистики
+      tags:
+      - Stat
+  /api/v1/stats/notification/{notification_uuid}:
+    get:
+      parameters:
+      - description: ID уведомления в формате UUID v4
+        in: path
+        name: notification_uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.Stat'
+            type: array
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      summary: Запрос статистики отправок по уведомлению
+      tags:
+      - Stat
+  /api/v1/stats/person/{person_uuid}:
+    get:
+      parameters:
+      - description: ID пользователя в формате UUID v4
+        in: path
+        name: person_uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.Stat'
+            type: array
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      summary: Запрос статистики отправок по пользователю
+      tags:
+      - Stat
+  /api/v1/templates:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.Template'
+            type: array
+        "500":
+          description: Internal Server Error
+      summary: Запрос деталей шаблона сообщения
+      tags:
+      - Template
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Принимает dto нового шаблона сообщения, возвращает JSON сохраненными
+          данными и идентификатором
+        in: body
+        name: template
+        required: true
+        schema:
+          $ref: '#/definitions/dto.IncomingTemplate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Template'
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+      summary: сохранение шаблона сообщения
+      tags:
+      - Template
+  /api/v1/templates/{template_uuid}:
+    delete:
+      parameters:
+      - description: ID шаблона в формате UUID v4
+        in: path
+        name: template_uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      summary: удаление шаблона сообщения
+      tags:
+      - Template
+    get:
+      parameters:
+      - description: ID шаблона в формате UUID v4
+        in: path
+        name: template_uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Template'
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      summary: Запрос деталей шаблона сообщения
+      tags:
+      - Template
+  /api/v1/templates/{templates_uuid}:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID шаблона сообщения в формате UUID v4
+        in: path
+        name: templates_uuid
+        required: true
+        type: string
+      - description: Принимает dto шаблона сообщения, возвращает JSON с обновленными
+          данными
+        in: body
+        name: template
+        required: true
+        schema:
+          $ref: '#/definitions/dto.IncomingTemplate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Template'
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      summary: обновление шаблона сообщения
+      tags:
+      - Template
+swagger: "2.0"
+tags:
+- description: '"Группа запросов бизнес событий"'
+  name: Event
+- description: '"Группа запросов уведомлений"'
+  name: Notifications
+- description: '"Группа запросов для работы со статистикой отправки"'
+  name: Stat
+- description: '"Группа запросов для работы с шаблонами сообщений. Для создания сообщений
+    требуется предварительное создание бизнес событий"'
+  name: Template

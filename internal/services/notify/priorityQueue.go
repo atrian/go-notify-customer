@@ -1,11 +1,11 @@
 package notify
 
 import (
-	"github.com/atrian/go-notify-customer/internal/services/notify/entity"
+	"github.com/atrian/go-notify-customer/internal/dto"
 )
 
 // PriorityQueue приоритетная очередь, реализует heap.Interface
-type PriorityQueue []*entity.Notification
+type PriorityQueue []*dto.Notification
 
 // Len текущая длина очереди
 func (pq PriorityQueue) Len() int { return len(pq) }
@@ -25,7 +25,7 @@ func (pq PriorityQueue) Swap(i, j int) {
 // Push добавление уведомления
 func (pq *PriorityQueue) Push(x any) {
 	n := len(*pq)
-	item := x.(*entity.Notification)
+	item := x.(*dto.Notification)
 	item.Index = n
 	*pq = append(*pq, item)
 }

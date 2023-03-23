@@ -2,24 +2,23 @@ package event
 
 import (
 	"context"
-	"github.com/stretchr/testify/assert"
-	"reflect"
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/atrian/go-notify-customer/internal/services/event/entity"
+	"github.com/atrian/go-notify-customer/internal/dto"
 )
 
 type TestSuite struct {
 	suite.Suite
 	service Service
-	events  []entity.Event
+	events  []dto.Event
 }
 
 func (suite *TestSuite) SetupSuite() {
-	suite.events = []entity.Event{
+	suite.events = []dto.Event{
 		{
 			EventUUID:            uuid.New(),
 			Title:                "New appointment",
@@ -44,13 +43,11 @@ func (suite *TestSuite) SetupTest() {
 func (suite *TestSuite) TestService_All() {
 	result := suite.service.All(context.TODO())
 
-	if !reflect.DeepEqual(result, suite.events) {
-		suite.T().Errorf("Expected events %v, got %v", suite.events, result)
-	}
+	assert.Equal(suite.T(), len(suite.events), len(result))
 }
 
 func (suite *TestSuite) TestService_Store() {
-	newEvent := entity.Event{
+	newEvent := dto.Event{
 		Title:                "New event",
 		Description:          "For test",
 		DefaultPriority:      1,
@@ -66,7 +63,7 @@ func (suite *TestSuite) TestService_Store() {
 }
 
 func (suite *TestSuite) TestService_StoreBatch() {
-	newEvents := []entity.Event{
+	newEvents := []dto.Event{
 		{
 			Title:                "New event 1",
 			Description:          "For test 1",

@@ -1,18 +1,23 @@
 package notify
 
 import (
+	"context"
 	"testing"
 
 	"github.com/google/uuid"
 
-	"github.com/atrian/go-notify-customer/internal/services/notify/entity"
+	"github.com/atrian/go-notify-customer/internal/dto"
+	"github.com/atrian/go-notify-customer/pkg/logger"
 )
 
 const bufferSize = 3
 
+// TestService_ProcessNotification проверяем правильность приоритезации уведомлений
 func TestService_ProcessNotification(t *testing.T) {
-	resultChan := make(chan entity.Notification, bufferSize)
-	notifications := []entity.Notification{
+	log := logger.NewZapLogger()
+
+	resultChan := make(chan dto.Notification, bufferSize)
+	notifications := []dto.Notification{
 		{
 			EventUUID: uuid.New(),
 			Priority:  1,
@@ -25,9 +30,9 @@ func TestService_ProcessNotification(t *testing.T) {
 		},
 	}
 
-	s := New(resultChan)
+	s := New(resultChan, log)
 
-	_ = s.ProcessNotification(notifications)
+	_ = s.ProcessNotification(context.TODO(), notifications)
 
 	res1 := <-resultChan
 	if res1.Priority != 999 {
