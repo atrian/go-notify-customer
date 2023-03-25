@@ -459,14 +459,13 @@ paths:
       summary: Запрос деталей шаблона сообщения
       tags:
       - Template
-  /api/v1/templates/{templates_uuid}:
     put:
       consumes:
       - application/json
       parameters:
       - description: ID шаблона сообщения в формате UUID v4
         in: path
-        name: templates_uuid
+        name: template_uuid
         required: true
         type: string
       - description: Принимает dto шаблона сообщения, возвращает JSON с обновленными
