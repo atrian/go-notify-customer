@@ -21,13 +21,13 @@ import (
 //	@Summary обновление шаблона сообщения
 //	@Accept  json
 //	@Produce json
-//	@Param templates_uuid path string true "ID шаблона сообщения в формате UUID v4"
+//	@Param template_uuid path string true "ID шаблона сообщения в формате UUID v4"
 //	@Param template body dto.IncomingTemplate true "Принимает dto шаблона сообщения, возвращает JSON с обновленными данными"
 //	@Success 200 {object} dto.Template
 //	@Failure 400
 //	@Failure 404
 //	@Failure 500
-//	@Router /api/v1/templates/{templates_uuid} [put]
+//	@Router /api/v1/templates/{template_uuid} [put]
 func (h *Handler) UpdateTemplate() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		param := chi.URLParam(r, "templateUUID")

@@ -2,8 +2,9 @@ package handlers
 
 import (
 	"compress/gzip"
-	"github.com/atrian/go-notify-customer/internal/interfaces"
 	"io"
+
+	"github.com/atrian/go-notify-customer/internal/interfaces"
 )
 
 type Handler struct {

@@ -464,6 +464,53 @@ const docTemplate = `{
                     }
                 }
             },
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Template"
+                ],
+                "summary": "обновление шаблона сообщения",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID шаблона сообщения в формате UUID v4",
+                        "name": "template_uuid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Принимает dto шаблона сообщения, возвращает JSON с обновленными данными",
+                        "name": "template",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.IncomingTemplate"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.Template"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            },
             "delete": {
                 "produces": [
                     "application/json"
@@ -484,55 +531,6 @@ const docTemplate = `{
                 "responses": {
                     "200": {
                         "description": "OK"
-                    },
-                    "400": {
-                        "description": "Bad Request"
-                    },
-                    "404": {
-                        "description": "Not Found"
-                    },
-                    "500": {
-                        "description": "Internal Server Error"
-                    }
-                }
-            }
-        },
-        "/api/v1/templates/{templates_uuid}": {
-            "put": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Template"
-                ],
-                "summary": "обновление шаблона сообщения",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "ID шаблона сообщения в формате UUID v4",
-                        "name": "templates_uuid",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Принимает dto шаблона сообщения, возвращает JSON с обновленными данными",
-                        "name": "template",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/dto.IncomingTemplate"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/dto.Template"
-                        }
                     },
                     "400": {
                         "description": "Bad Request"
